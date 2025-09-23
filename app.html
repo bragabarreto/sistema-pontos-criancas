@@ -208,19 +208,55 @@
             border-radius: 8px;
             cursor: pointer;
             transition: all 0.3s ease;
+            position: relative;
         }
         
         .activity-item:hover {
             background: rgba(255,255,255,0.2);
         }
         
+        .activity-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+        }
+        
         .activity-name {
             font-weight: 500;
+            flex: 1;
+        }
+        
+        .activity-actions {
+            display: flex;
+            gap: 5px;
+            margin-right: 10px;
+        }
+        
+        .edit-btn, .delete-btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 4px;
+            padding: 4px 8px;
+            cursor: pointer;
+            font-size: 12px;
+            color: white;
+            transition: all 0.3s ease;
+        }
+        
+        .edit-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .delete-btn:hover {
+            background: rgba(255,0,0,0.5);
         }
         
         .activity-points {
             font-weight: 700;
             font-size: 1.1rem;
+            min-width: 60px;
+            text-align: right;
         }
         
         .expenses-section {
@@ -330,6 +366,8 @@
             border-radius: 15px;
             width: 90%;
             max-width: 500px;
+            max-height: 80vh;
+            overflow-y: auto;
         }
         
         .modal-header {
@@ -378,6 +416,7 @@
             font-weight: 600;
             font-size: 16px;
             transition: all 0.3s ease;
+            margin-right: 10px;
         }
         
         .btn-primary {
@@ -407,8 +446,59 @@
             background: #dc2626;
         }
         
+        .btn-warning {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .btn-warning:hover {
+            background: #d97706;
+        }
+        
         .hidden {
             display: none;
+        }
+        
+        .edit-mode {
+            background: rgba(255,255,0,0.1) !important;
+            border: 2px dashed rgba(255,255,255,0.5) !important;
+        }
+        
+        .category-management {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .category-management h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .multiplier-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .multiplier-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .multiplier-item label {
+            font-weight: 600;
+            min-width: 80px;
+        }
+        
+        .multiplier-item input {
+            flex: 1;
+            padding: 8px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
         }
         
         @media (max-width: 768px) {
@@ -434,6 +524,11 @@
             
             .expense-form input, .expense-form button {
                 width: 100%;
+            }
+            
+            .activity-actions {
+                flex-direction: column;
+                gap: 2px;
             }
         }
     </style>
@@ -488,104 +583,67 @@
         
         <!-- Atividades -->
         <div id="activities" class="content hidden">
+            <div class="category-management">
+                <h3>⚙️ Gerenciar Multiplicadores</h3>
+                <div class="multiplier-controls">
+                    <div class="multiplier-item">
+                        <label>Positivos:</label>
+                        <input type="number" id="positiveMultiplier" value="1" min="1">
+                    </div>
+                    <div class="multiplier-item">
+                        <label>Especiais:</label>
+                        <input type="number" id="specialMultiplier" value="100" min="1">
+                    </div>
+                    <div class="multiplier-item">
+                        <label>Negativos:</label>
+                        <input type="number" id="negativeMultiplier" value="1" min="1">
+                    </div>
+                    <div class="multiplier-item">
+                        <label>Graves:</label>
+                        <input type="number" id="graveMultiplier" value="100" min="1">
+                    </div>
+                </div>
+                <button class="btn btn-primary" onclick="updateMultipliers()">Atualizar Multiplicadores</button>
+            </div>
+            
             <div class="categories-grid">
                 <div class="category-card positive">
                     <div class="category-header">
                         <div class="category-title">✅ Positivos</div>
-                        <div class="category-multiplier">x1</div>
+                        <div class="category-multiplier" id="positiveMultiplierDisplay">x1</div>
                     </div>
                     <div class="activity-list" id="positiveActivities">
-                        <div class="activity-item" data-points="1" data-activity="Arrumar a cama">
-                            <span class="activity-name">Arrumar a cama</span>
-                            <span class="activity-points">+1</span>
-                        </div>
-                        <div class="activity-item" data-points="1" data-activity="Escovar os dentes">
-                            <span class="activity-name">Escovar os dentes</span>
-                            <span class="activity-points">+1</span>
-                        </div>
-                        <div class="activity-item" data-points="1" data-activity="Guardar brinquedos">
-                            <span class="activity-name">Guardar brinquedos</span>
-                            <span class="activity-points">+1</span>
-                        </div>
-                        <div class="activity-item" data-points="1" data-activity="Ajudar nas tarefas">
-                            <span class="activity-name">Ajudar nas tarefas</span>
-                            <span class="activity-points">+1</span>
-                        </div>
+                        <!-- Atividades serão inseridas aqui -->
                     </div>
                 </div>
                 
                 <div class="category-card special">
                     <div class="category-header">
                         <div class="category-title">⭐ Especiais</div>
-                        <div class="category-multiplier">x100</div>
+                        <div class="category-multiplier" id="specialMultiplierDisplay">x100</div>
                     </div>
                     <div class="activity-list" id="specialActivities">
-                        <div class="activity-item" data-points="100" data-activity="Ler um livro completo">
-                            <span class="activity-name">Ler um livro completo</span>
-                            <span class="activity-points">+100</span>
-                        </div>
-                        <div class="activity-item" data-points="50" data-activity="Fazer lição sem ajuda">
-                            <span class="activity-name">Fazer lição sem ajuda</span>
-                            <span class="activity-points">+50</span>
-                        </div>
-                        <div class="activity-item" data-points="30" data-activity="Comer frutas/verduras">
-                            <span class="activity-name">Comer frutas/verduras</span>
-                            <span class="activity-points">+30</span>
-                        </div>
-                        <div class="activity-item" data-points="25" data-activity="Ser gentil com irmão">
-                            <span class="activity-name">Ser gentil com irmão</span>
-                            <span class="activity-points">+25</span>
-                        </div>
+                        <!-- Atividades serão inseridas aqui -->
                     </div>
                 </div>
                 
                 <div class="category-card negative">
                     <div class="category-header">
                         <div class="category-title">⚠️ Negativos</div>
-                        <div class="category-multiplier">x1</div>
+                        <div class="category-multiplier" id="negativeMultiplierDisplay">x1</div>
                     </div>
                     <div class="activity-list" id="negativeActivities">
-                        <div class="activity-item" data-points="-1" data-activity="Não escovar os dentes">
-                            <span class="activity-name">Não escovar os dentes</span>
-                            <span class="activity-points">-1</span>
-                        </div>
-                        <div class="activity-item" data-points="-1" data-activity="Deixar quarto bagunçado">
-                            <span class="activity-name">Deixar quarto bagunçado</span>
-                            <span class="activity-points">-1</span>
-                        </div>
-                        <div class="activity-item" data-points="-2" data-activity="Não fazer lição">
-                            <span class="activity-name">Não fazer lição</span>
-                            <span class="activity-points">-2</span>
-                        </div>
-                        <div class="activity-item" data-points="-3" data-activity="Desobedecer">
-                            <span class="activity-name">Desobedecer</span>
-                            <span class="activity-points">-3</span>
-                        </div>
+                        <!-- Atividades serão inseridas aqui -->
                     </div>
                 </div>
                 
                 <div class="category-card grave">
                     <div class="category-header">
                         <div class="category-title">🚫 Graves</div>
-                        <div class="category-multiplier">x100</div>
+                        <div class="category-multiplier" id="graveMultiplierDisplay">x100</div>
                     </div>
                     <div class="activity-list" id="graveActivities">
-                        <div class="activity-item" data-points="-100" data-activity="Bater no irmão">
-                            <span class="activity-name">Bater no irmão</span>
-                            <span class="activity-points">-100</span>
-                        </div>
-                        <div class="activity-item" data-points="-50" data-activity="Mentir">
-                            <span class="activity-name">Mentir</span>
-                            <span class="activity-points">-50</span>
-                        </div>
-                        <div class="activity-item" data-points="-75" data-activity="Quebrar algo de propósito">
-                            <span class="activity-name">Quebrar algo de propósito</span>
-                            <span class="activity-points">-75</span>
-                        </div>
-                        <div class="activity-item" data-points="-30" data-activity="Gritar/fazer birra">
-                            <span class="activity-name">Gritar/fazer birra</span>
-                            <span class="activity-points">-30</span>
-                        </div>
+                        <!-- Atividades serão inseridas aqui -->
                     </div>
                 </div>
             </div>
@@ -661,10 +719,10 @@
             <div class="form-group">
                 <label>Categoria:</label>
                 <select id="newActivityCategory">
-                    <option value="positive">Positivos (x1)</option>
-                    <option value="special">Especiais (x100)</option>
-                    <option value="negative">Negativos (x1)</option>
-                    <option value="grave">Graves (x100)</option>
+                    <option value="positive">Positivos</option>
+                    <option value="special">Especiais</option>
+                    <option value="negative">Negativos</option>
+                    <option value="grave">Graves</option>
                 </select>
             </div>
             <div class="form-group">
@@ -674,11 +732,43 @@
             <button class="btn btn-primary" onclick="addNewActivity()">Adicionar Atividade</button>
         </div>
     </div>
+    
+    <!-- Modal para editar atividade -->
+    <div id="editActivityModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">Editar Atividade</h3>
+                <button class="close-btn" onclick="closeModal('editActivityModal')">&times;</button>
+            </div>
+            <div class="form-group">
+                <label>Nome da Atividade:</label>
+                <input type="text" id="editActivityName">
+            </div>
+            <div class="form-group">
+                <label>Categoria:</label>
+                <select id="editActivityCategory">
+                    <option value="positive">Positivos</option>
+                    <option value="special">Especiais</option>
+                    <option value="negative">Negativos</option>
+                    <option value="grave">Graves</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Pontos Base:</label>
+                <input type="number" id="editActivityPoints">
+            </div>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn btn-primary" onclick="saveActivityEdit()">Salvar Alterações</button>
+                <button class="btn btn-danger" onclick="deleteActivity()">Excluir Atividade</button>
+            </div>
+        </div>
+    </div>
 
     <script>
         // Estado da aplicação
         let currentChild = 'luiza';
         let currentTab = 'dashboard';
+        let editingActivityId = null;
         let data = {
             luiza: {
                 activities: [],
@@ -689,6 +779,38 @@
                 activities: [],
                 expenses: [],
                 totalPoints: 0
+            },
+            multipliers: {
+                positive: 1,
+                special: 100,
+                negative: 1,
+                grave: 100
+            },
+            customActivities: {
+                positive: [
+                    { id: 1, name: 'Arrumar a cama', basePoints: 1 },
+                    { id: 2, name: 'Escovar os dentes', basePoints: 1 },
+                    { id: 3, name: 'Guardar brinquedos', basePoints: 1 },
+                    { id: 4, name: 'Ajudar nas tarefas', basePoints: 1 }
+                ],
+                special: [
+                    { id: 5, name: 'Ler um livro completo', basePoints: 1 },
+                    { id: 6, name: 'Fazer lição sem ajuda', basePoints: 0.5 },
+                    { id: 7, name: 'Comer frutas/verduras', basePoints: 0.3 },
+                    { id: 8, name: 'Ser gentil com irmão', basePoints: 0.25 }
+                ],
+                negative: [
+                    { id: 9, name: 'Não escovar os dentes', basePoints: 1 },
+                    { id: 10, name: 'Deixar quarto bagunçado', basePoints: 1 },
+                    { id: 11, name: 'Não fazer lição', basePoints: 2 },
+                    { id: 12, name: 'Desobedecer', basePoints: 3 }
+                ],
+                grave: [
+                    { id: 13, name: 'Bater no irmão', basePoints: 1 },
+                    { id: 14, name: 'Mentir', basePoints: 0.5 },
+                    { id: 15, name: 'Quebrar algo de propósito', basePoints: 0.75 },
+                    { id: 16, name: 'Gritar/fazer birra', basePoints: 0.3 }
+                ]
             }
         };
 
@@ -696,7 +818,14 @@
         function loadData() {
             const savedData = localStorage.getItem('kidsPointsAdvanced');
             if (savedData) {
-                data = JSON.parse(savedData);
+                const parsed = JSON.parse(savedData);
+                // Manter estrutura de dados atualizada
+                data = {
+                    ...data,
+                    ...parsed,
+                    multipliers: parsed.multipliers || data.multipliers,
+                    customActivities: parsed.customActivities || data.customActivities
+                };
             }
         }
 
@@ -709,6 +838,8 @@
         document.addEventListener('DOMContentLoaded', function() {
             loadData();
             setupEventListeners();
+            updateMultiplierInputs();
+            renderActivities();
             updateDisplay();
             
             // Definir data atual no campo de gasto
@@ -729,15 +860,6 @@
                     switchChild(this.dataset.child);
                 });
             });
-
-            // Atividades
-            document.querySelectorAll('.activity-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    const points = parseInt(this.dataset.points);
-                    const activity = this.dataset.activity;
-                    addActivity(activity, points);
-                });
-            });
         }
 
         function switchTab(tabName) {
@@ -754,6 +876,9 @@
             document.getElementById(tabName).classList.remove('hidden');
 
             currentTab = tabName;
+            if (tabName === 'activities') {
+                renderActivities();
+            }
             updateDisplay();
         }
 
@@ -766,6 +891,179 @@
 
             currentChild = childName;
             updateDisplay();
+        }
+
+        function updateMultiplierInputs() {
+            document.getElementById('positiveMultiplier').value = data.multipliers.positive;
+            document.getElementById('specialMultiplier').value = data.multipliers.special;
+            document.getElementById('negativeMultiplier').value = data.multipliers.negative;
+            document.getElementById('graveMultiplier').value = data.multipliers.grave;
+        }
+
+        function updateMultipliers() {
+            data.multipliers.positive = parseInt(document.getElementById('positiveMultiplier').value);
+            data.multipliers.special = parseInt(document.getElementById('specialMultiplier').value);
+            data.multipliers.negative = parseInt(document.getElementById('negativeMultiplier').value);
+            data.multipliers.grave = parseInt(document.getElementById('graveMultiplier').value);
+            
+            saveData();
+            renderActivities();
+            showNotification('Multiplicadores atualizados com sucesso!');
+        }
+
+        function renderActivities() {
+            const categories = ['positive', 'special', 'negative', 'grave'];
+            
+            categories.forEach(category => {
+                const container = document.getElementById(`${category}Activities`);
+                const multiplierDisplay = document.getElementById(`${category}MultiplierDisplay`);
+                const multiplier = data.multipliers[category];
+                
+                multiplierDisplay.textContent = `x${multiplier}`;
+                
+                container.innerHTML = data.customActivities[category].map(activity => {
+                    const finalPoints = calculateFinalPoints(activity.basePoints, category);
+                    return `
+                        <div class="activity-item" data-activity-id="${activity.id}">
+                            <div class="activity-content">
+                                <span class="activity-name">${activity.name}</span>
+                                <div class="activity-actions">
+                                    <button class="edit-btn" onclick="editActivity(${activity.id}, '${category}')">✏️</button>
+                                    <button class="delete-btn" onclick="confirmDeleteActivity(${activity.id}, '${category}')">🗑️</button>
+                                </div>
+                                <span class="activity-points">${finalPoints > 0 ? '+' : ''}${finalPoints}</span>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+                
+                // Adicionar event listeners para clique nas atividades
+                container.querySelectorAll('.activity-item').forEach(item => {
+                    item.addEventListener('click', function(e) {
+                        // Não executar se clicou nos botões de ação
+                        if (e.target.classList.contains('edit-btn') || e.target.classList.contains('delete-btn')) {
+                            return;
+                        }
+                        
+                        const activityId = parseInt(this.dataset.activityId);
+                        const activity = data.customActivities[category].find(a => a.id === activityId);
+                        if (activity) {
+                            const finalPoints = calculateFinalPoints(activity.basePoints, category);
+                            addActivity(activity.name, finalPoints);
+                        }
+                    });
+                });
+            });
+        }
+
+        function calculateFinalPoints(basePoints, category) {
+            let finalPoints = basePoints * data.multipliers[category];
+            if (category === 'negative' || category === 'grave') {
+                finalPoints = -Math.abs(finalPoints);
+            }
+            return Math.round(finalPoints);
+        }
+
+        function editActivity(activityId, category) {
+            const activity = data.customActivities[category].find(a => a.id === activityId);
+            if (!activity) return;
+            
+            editingActivityId = activityId;
+            document.getElementById('editActivityName').value = activity.name;
+            document.getElementById('editActivityCategory').value = category;
+            document.getElementById('editActivityPoints').value = activity.basePoints;
+            
+            openModal('editActivityModal');
+        }
+
+        function saveActivityEdit() {
+            if (!editingActivityId) return;
+            
+            const newName = document.getElementById('editActivityName').value.trim();
+            const newCategory = document.getElementById('editActivityCategory').value;
+            const newBasePoints = parseFloat(document.getElementById('editActivityPoints').value);
+            
+            if (!newName || !newBasePoints) {
+                alert('Preencha todos os campos!');
+                return;
+            }
+            
+            // Encontrar a atividade atual
+            let currentCategory = null;
+            let activityIndex = -1;
+            
+            for (const [category, activities] of Object.entries(data.customActivities)) {
+                const index = activities.findIndex(a => a.id === editingActivityId);
+                if (index !== -1) {
+                    currentCategory = category;
+                    activityIndex = index;
+                    break;
+                }
+            }
+            
+            if (currentCategory && activityIndex !== -1) {
+                const activity = data.customActivities[currentCategory][activityIndex];
+                
+                // Se mudou de categoria, mover a atividade
+                if (currentCategory !== newCategory) {
+                    // Remover da categoria atual
+                    data.customActivities[currentCategory].splice(activityIndex, 1);
+                    // Adicionar na nova categoria
+                    data.customActivities[newCategory].push({
+                        id: activity.id,
+                        name: newName,
+                        basePoints: newBasePoints
+                    });
+                } else {
+                    // Apenas atualizar na mesma categoria
+                    activity.name = newName;
+                    activity.basePoints = newBasePoints;
+                }
+                
+                saveData();
+                renderActivities();
+                closeModal('editActivityModal');
+                showNotification('Atividade atualizada com sucesso!');
+            }
+        }
+
+        function confirmDeleteActivity(activityId, category) {
+            const activity = data.customActivities[category].find(a => a.id === activityId);
+            if (!activity) return;
+            
+            if (confirm(`Tem certeza que deseja excluir a atividade "${activity.name}"?`)) {
+                deleteActivityById(activityId, category);
+            }
+        }
+
+        function deleteActivity() {
+            if (!editingActivityId) return;
+            
+            // Encontrar e remover a atividade
+            for (const [category, activities] of Object.entries(data.customActivities)) {
+                const index = activities.findIndex(a => a.id === editingActivityId);
+                if (index !== -1) {
+                    const activity = activities[index];
+                    if (confirm(`Tem certeza que deseja excluir a atividade "${activity.name}"?`)) {
+                        activities.splice(index, 1);
+                        saveData();
+                        renderActivities();
+                        closeModal('editActivityModal');
+                        showNotification('Atividade excluída com sucesso!');
+                    }
+                    break;
+                }
+            }
+        }
+
+        function deleteActivityById(activityId, category) {
+            const index = data.customActivities[category].findIndex(a => a.id === activityId);
+            if (index !== -1) {
+                data.customActivities[category].splice(index, 1);
+                saveData();
+                renderActivities();
+                showNotification('Atividade excluída com sucesso!');
+            }
         }
 
         function addActivity(activityName, points) {
@@ -903,43 +1201,31 @@
 
         function closeModal(modalId) {
             document.getElementById(modalId).style.display = 'none';
+            editingActivityId = null;
         }
 
         function addNewActivity() {
             const name = document.getElementById('newActivityName').value.trim();
             const category = document.getElementById('newActivityCategory').value;
-            const basePoints = parseInt(document.getElementById('newActivityPoints').value);
+            const basePoints = parseFloat(document.getElementById('newActivityPoints').value);
 
             if (!name || !basePoints) {
                 alert('Preencha todos os campos!');
                 return;
             }
 
-            // Calcular pontos finais baseado na categoria
-            let finalPoints = basePoints;
-            if (category === 'special' || category === 'grave') {
-                finalPoints = basePoints * 100;
-            }
-            if (category === 'negative' || category === 'grave') {
-                finalPoints = -Math.abs(finalPoints);
-            }
+            // Gerar novo ID único
+            const newId = Math.max(...Object.values(data.customActivities).flat().map(a => a.id), 0) + 1;
+            
+            const newActivity = {
+                id: newId,
+                name: name,
+                basePoints: basePoints
+            };
 
-            // Adicionar à interface
-            const categoryContainer = document.getElementById(`${category}Activities`);
-            const newItem = document.createElement('div');
-            newItem.className = 'activity-item';
-            newItem.dataset.points = finalPoints;
-            newItem.dataset.activity = name;
-            newItem.innerHTML = `
-                <span class="activity-name">${name}</span>
-                <span class="activity-points">${finalPoints > 0 ? '+' : ''}${finalPoints}</span>
-            `;
-            
-            newItem.addEventListener('click', function() {
-                addActivity(name, finalPoints);
-            });
-            
-            categoryContainer.appendChild(newItem);
+            data.customActivities[category].push(newActivity);
+            saveData();
+            renderActivities();
 
             // Limpar formulário e fechar modal
             document.getElementById('newActivityName').value = '';
@@ -975,6 +1261,8 @@
                             const importedData = JSON.parse(e.target.result);
                             data = importedData;
                             saveData();
+                            updateMultiplierInputs();
+                            renderActivities();
                             updateDisplay();
                             showNotification('Dados importados com sucesso!');
                         } catch (error) {
@@ -991,9 +1279,38 @@
             if (confirm('Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.')) {
                 data = {
                     luiza: { activities: [], expenses: [], totalPoints: 0 },
-                    miguel: { activities: [], expenses: [], totalPoints: 0 }
+                    miguel: { activities: [], expenses: [], totalPoints: 0 },
+                    multipliers: { positive: 1, special: 100, negative: 1, grave: 100 },
+                    customActivities: {
+                        positive: [
+                            { id: 1, name: 'Arrumar a cama', basePoints: 1 },
+                            { id: 2, name: 'Escovar os dentes', basePoints: 1 },
+                            { id: 3, name: 'Guardar brinquedos', basePoints: 1 },
+                            { id: 4, name: 'Ajudar nas tarefas', basePoints: 1 }
+                        ],
+                        special: [
+                            { id: 5, name: 'Ler um livro completo', basePoints: 1 },
+                            { id: 6, name: 'Fazer lição sem ajuda', basePoints: 0.5 },
+                            { id: 7, name: 'Comer frutas/verduras', basePoints: 0.3 },
+                            { id: 8, name: 'Ser gentil com irmão', basePoints: 0.25 }
+                        ],
+                        negative: [
+                            { id: 9, name: 'Não escovar os dentes', basePoints: 1 },
+                            { id: 10, name: 'Deixar quarto bagunçado', basePoints: 1 },
+                            { id: 11, name: 'Não fazer lição', basePoints: 2 },
+                            { id: 12, name: 'Desobedecer', basePoints: 3 }
+                        ],
+                        grave: [
+                            { id: 13, name: 'Bater no irmão', basePoints: 1 },
+                            { id: 14, name: 'Mentir', basePoints: 0.5 },
+                            { id: 15, name: 'Quebrar algo de propósito', basePoints: 0.75 },
+                            { id: 16, name: 'Gritar/fazer birra', basePoints: 0.3 }
+                        ]
+                    }
                 };
                 saveData();
+                updateMultiplierInputs();
+                renderActivities();
                 updateDisplay();
                 showNotification('Dados resetados com sucesso!');
             }
@@ -1027,6 +1344,7 @@
         window.onclick = function(event) {
             if (event.target.classList.contains('modal')) {
                 event.target.style.display = 'none';
+                editingActivityId = null;
             }
         }
     </script>
