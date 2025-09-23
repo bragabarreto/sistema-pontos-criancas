@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Pontuação - Crianças</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+    <style>
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 18px;">
+            Carregando Sistema de Pontuação...
+        </div>
+    </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Calendar, Trophy, Gift, TrendingUp, Plus, Minus, Star, AlertTriangle, Wallet, History, BarChart3, Settings, Users, Share2, Edit3, Trash2, Save, X, UserPlus, Download, Upload } = lucide;
+
+        const KidsPointsApp = () => {
+            const [children, setChildren] = useState([]);
+            const [currentView, setCurrentView] = useState('dashboard');
+            const [selectedChild, setSelectedChild] = useState(null);
+            const [showAddChild, setShowAddChild] = useState(false);
+            const [newChildName, setNewChildName] = useState('');
+
+            // Carregar dados do localStorage
+            useEffect(() => {
+                const savedChildren = localStorage.getItem('kidsPointsData');
+                if (savedChildren) {
+                    setChildren(JSON.parse(savedChildren));
+                }
+            }, []);
+
+            // Salvar dados no localStorage
+            useEffect(() => {
+                localStorage.setItem('kidsPointsData', JSON.stringify(children));
+            }, [children]);
+
+            const addChild = () => {
+                if (newChildName.trim()) {
+                    const newChild = {
+                        id: Date.now(),
+                        name: newChildName,
+                        points: 0,
+                        activities: [],
+                        rewards: [],
+                        createdAt: new Date().toISOString()
+                    };
+                    setChildren([...children, newChild]);
+                    setNewChildName('');
+                    setShowAddChild(false);
+                }
+            };
+
+            const addPoints = (childId, points, activity) => {
+                setChildren(children.map(child => {
+                    if (child.id === childId) {
+                        const newActivity = {
+                            id: Date.now(),
+                            type: 'gain',
+                            points: points,
+                            description: activity,
+                            date: new Date().toISOString()
+                        };
+                        return {
+                            ...child,
+                            points: child.points + points,
+                            activities: [...child.activities, newActivity]
+                        };
+                    }
+                    return child;
+                }));
+            };
+
+            const removePoints = (childId, points, reason) => {
+                setChildren(children.map(child => {
+                    if (child.id === childId) {
+                        const newActivity = {
+                            id: Date.now(),
+                            type: 'spend',
+                            points: points,
+                            description: reason,
+                            date: new Date().toISOString()
+                        };
+                        return {
+                            ...child,
+                            points: Math.max(0, child.points - points),
+                            activities: [...child.activities, newActivity]
+                        };
+                    }
+                    return child;
+                }));
+            };
+
+            const ChildCard = ({ child }) => (
+                <div className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-800">{child.name}</h3>
+                        <div className="flex items-center space-x-2">
+                            <Star className="w-5 h-5 text-yellow-500" />
+                            <span className="text-2xl font-bold text-blue-600">{child.points}</span>
+                        </div>
+                    </div>
+                    
+                    <div className="flex space-x-2 mb-4">
+                        <button
+                            onClick={() => addPoints(child.id, 10, 'Tarefa realizada')}
+                            className="flex-1 bg-green-500 text-white px-3 py-2 rounded-lg hover:bg-green-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>+10</span>
+                        </button>
+                        <button
+                            onClick={() => addPoints(child.id, 5, 'Boa ação')}
+                            className="flex-1 bg-blue-500 text-white px-3 py-2 rounded-lg hover:bg-blue-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                            <Plus className="w-4 h-4" />
+                            <span>+5</span>
+                        </button>
+                        <button
+                            onClick={() => removePoints(child.id, 5, 'Recompensa')}
+                            className="flex-1 bg-orange-500 text-white px-3 py-2 rounded-lg hover:bg-orange-600 transition-colors flex items-center justify-center space-x-1"
+                        >
+                            <Gift className="w-4 h-4" />
+                            <span>-5</span>
+                        </button>
+                    </div>
+
+                    <div className="text-sm text-gray-600">
+                        <p>Última atividade: {child.activities.length > 0 ? 
+                            new Date(child.activities[child.activities.length - 1].date).toLocaleDateString('pt-BR') : 
+                            'Nenhuma atividade'
+                        }</p>
+                    </div>
+
+                    <button
+                        onClick={() => setSelectedChild(child)}
+                        className="w-full mt-4 bg-gray-100 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-200 transition-colors flex items-center justify-center space-x-2"
+                    >
+                        <History className="w-4 h-4" />
+                        <span>Ver Histórico</span>
+                    </button>
+                </div>
+            );
+
+            const ActivityHistory = ({ child }) => (
+                <div className="bg-white rounded-lg shadow-md p-6">
+                    <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-xl font-bold text-gray-800">Histórico - {child.name}</h3>
+                        <button
+                            onClick={() => setSelectedChild(null)}
+                            className="text-gray-500 hover:text-gray-700"
+                        >
+                            <X className="w-6 h-6" />
+                        </button>
+                    </div>
+
+                    <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {child.activities.length === 0 ? (
+                            <p className="text-gray-500 text-center py-8">Nenhuma atividade registrada</p>
+                        ) : (
+                            child.activities.slice().reverse().map(activity => (
+                                <div key={activity.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                                    <div className="flex items-center space-x-3">
+                                        {activity.type === 'gain' ? (
+                                            <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                                                <Plus className="w-4 h-4 text-green-600" />
+                                            </div>
+                                        ) : (
+                                            <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                                                <Gift className="w-4 h-4 text-orange-600" />
+                                            </div>
+                                        )}
+                                        <div>
+                                            <p className="font-medium text-gray-800">{activity.description}</p>
+                                            <p className="text-sm text-gray-500">
+                                                {new Date(activity.date).toLocaleDateString('pt-BR')} às {new Date(activity.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className={`font-bold ${activity.type === 'gain' ? 'text-green-600' : 'text-orange-600'}`}>
+                                        {activity.type === 'gain' ? '+' : '-'}{activity.points}
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+                </div>
+            );
+
+            return (
+                <div className="min-h-screen bg-gray-50">
+                    <header className="bg-white shadow-sm border-b">
+                        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                            <div className="flex justify-between items-center py-4">
+                                <div className="flex items-center space-x-3">
+                                    <Trophy className="w-8 h-8 text-blue-600" />
+                                    <h1 className="text-2xl font-bold text-gray-900">Sistema de Pontos</h1>
+                                </div>
+                                <button
+                                    onClick={() => setShowAddChild(true)}
+                                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+                                >
+                                    <UserPlus className="w-4 h-4" />
+                                    <span>Adicionar Criança</span>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                        {selectedChild ? (
+                            <ActivityHistory child={selectedChild} />
+                        ) : (
+                            <>
+                                {children.length === 0 ? (
+                                    <div className="text-center py-12">
+                                        <Trophy className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                                        <h2 className="text-2xl font-bold text-gray-600 mb-2">Bem-vindo ao Sistema de Pontos!</h2>
+                                        <p className="text-gray-500 mb-6">Adicione suas crianças para começar a acompanhar suas atividades e recompensas.</p>
+                                        <button
+                                            onClick={() => setShowAddChild(true)}
+                                            className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2 mx-auto"
+                                        >
+                                            <UserPlus className="w-5 h-5" />
+                                            <span>Adicionar Primeira Criança</span>
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                        {children.map(child => (
+                                            <ChildCard key={child.id} child={child} />
+                                        ))}
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </main>
+
+                    {/* Modal para adicionar criança */}
+                    {showAddChild && (
+                        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                            <div className="bg-white rounded-lg p-6 w-full max-w-md">
+                                <h3 className="text-lg font-bold text-gray-800 mb-4">Adicionar Nova Criança</h3>
+                                <input
+                                    type="text"
+                                    value={newChildName}
+                                    onChange={(e) => setNewChildName(e.target.value)}
+                                    placeholder="Nome da criança"
+                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 mb-4"
+                                    onKeyPress={(e) => e.key === 'Enter' && addChild()}
+                                />
+                                <div className="flex space-x-3">
+                                    <button
+                                        onClick={addChild}
+                                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                                    >
+                                        Adicionar
+                                    </button>
+                                    <button
+                                        onClick={() => {
+                                            setShowAddChild(false);
+                                            setNewChildName('');
+                                        }}
+                                        className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-400 transition-colors"
+                                    >
+                                        Cancelar
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        };
+
+        ReactDOM.render(React.createElement(KidsPointsApp), document.getElementById('root'));
+    </script>
+</body>
+</html>
