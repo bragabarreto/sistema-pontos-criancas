@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Pontuação - Crianças</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.9;
+        }
+        
+        .controls {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .add-child {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .add-child input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e1e5e9;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .add-child button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+        }
+        
+        .add-child button:hover {
+            background: #5a6fd8;
+        }
+        
+        .children-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+        }
+        
+        .child-card {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .child-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .child-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .child-name {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #333;
+        }
+        
+        .child-points {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #667eea;
+        }
+        
+        .points-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+        
+        .points-btn {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        
+        .points-btn.add {
+            background: #10b981;
+            color: white;
+        }
+        
+        .points-btn.add:hover {
+            background: #059669;
+        }
+        
+        .points-btn.remove {
+            background: #f59e0b;
+            color: white;
+        }
+        
+        .points-btn.remove:hover {
+            background: #d97706;
+        }
+        
+        .history {
+            max-height: 200px;
+            overflow-y: auto;
+            border-top: 1px solid #e1e5e9;
+            padding-top: 15px;
+        }
+        
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid #f3f4f6;
+        }
+        
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        
+        .history-desc {
+            font-size: 14px;
+            color: #666;
+        }
+        
+        .history-points {
+            font-weight: 600;
+        }
+        
+        .history-points.positive {
+            color: #10b981;
+        }
+        
+        .history-points.negative {
+            color: #f59e0b;
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: white;
+            padding: 60px 20px;
+        }
+        
+        .empty-state h2 {
+            font-size: 2rem;
+            margin-bottom: 15px;
+        }
+        
+        .empty-state p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .success-message {
+            background: #10b981;
+            color: white;
+            padding: 10px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            text-align: center;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="success-message">
+            ✅ Sistema funcionando perfeitamente! GitHub Pages atualizado com sucesso.
+        </div>
+        
+        <div class="header">
+            <h1>🏆 Sistema de Pontos</h1>
+            <p>Incentive bons comportamentos de forma divertida!</p>
+        </div>
+        
+        <div class="controls">
+            <div class="add-child">
+                <input type="text" id="childName" placeholder="Nome da criança" />
+                <button onclick="addChild()">Adicionar Criança</button>
+            </div>
+        </div>
+        
+        <div id="childrenContainer" class="children-grid"></div>
+        
+        <div id="emptyState" class="empty-state">
+            <h2>Bem-vindo!</h2>
+            <p>Adicione suas crianças para começar a acompanhar suas atividades e recompensas.</p>
+        </div>
+    </div>
+
+    <script>
+        let children = JSON.parse(localStorage.getItem('kidsPointsData') || '[]');
+        
+        function saveData() {
+            localStorage.setItem('kidsPointsData', JSON.stringify(children));
+        }
+        
+        function addChild() {
+            const nameInput = document.getElementById('childName');
+            const name = nameInput.value.trim();
+            
+            if (name) {
+                const newChild = {
+                    id: Date.now(),
+                    name: name,
+                    points: 0,
+                    activities: []
+                };
+                
+                children.push(newChild);
+                nameInput.value = '';
+                saveData();
+                renderChildren();
+            }
+        }
+        
+        function addPoints(childId, points, description) {
+            const child = children.find(c => c.id === childId);
+            if (child) {
+                child.points += points;
+                child.activities.unshift({
+                    id: Date.now(),
+                    points: points,
+                    description: description,
+                    date: new Date().toLocaleString('pt-BR')
+                });
+                saveData();
+                renderChildren();
+            }
+        }
+        
+        function removePoints(childId, points, description) {
+            const child = children.find(c => c.id === childId);
+            if (child) {
+                child.points = Math.max(0, child.points - points);
+                child.activities.unshift({
+                    id: Date.now(),
+                    points: -points,
+                    description: description,
+                    date: new Date().toLocaleString('pt-BR')
+                });
+                saveData();
+                renderChildren();
+            }
+        }
+        
+        function renderChildren() {
+            const container = document.getElementById('childrenContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (children.length === 0) {
+                container.innerHTML = '';
+                emptyState.style.display = 'block';
+                return;
+            }
+            
+            emptyState.style.display = 'none';
+            
+            container.innerHTML = children.map(child => `
+                <div class="child-card">
+                    <div class="child-header">
+                        <div class="child-name">${child.name}</div>
+                        <div class="child-points">${child.points}</div>
+                    </div>
+                    
+                    <div class="points-controls">
+                        <button class="points-btn add" onclick="addPoints(${child.id}, 10, 'Tarefa realizada')">
+                            +10 Tarefa
+                        </button>
+                        <button class="points-btn add" onclick="addPoints(${child.id}, 5, 'Boa ação')">
+                            +5 Boa ação
+                        </button>
+                        <button class="points-btn remove" onclick="removePoints(${child.id}, 5, 'Recompensa')">
+                            -5 Recompensa
+                        </button>
+                    </div>
+                    
+                    <div class="history">
+                        ${child.activities.slice(0, 5).map(activity => `
+                            <div class="history-item">
+                                <div class="history-desc">${activity.description}</div>
+                                <div class="history-points ${activity.points > 0 ? 'positive' : 'negative'}">
+                                    ${activity.points > 0 ? '+' : ''}${activity.points}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+        
+        // Permitir adicionar criança com Enter
+        document.getElementById('childName').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addChild();
+            }
+        });
+        
+        // Renderizar na inicialização
+        renderChildren();
+    </script>
+</body>
+</html>
