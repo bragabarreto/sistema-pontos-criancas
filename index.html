@@ -3,18 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Pontuação - Filhos</title>
+    <title>Sistema de Pontuação - Crianças</title>
     <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
     <style>
-        body { margin: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; }
+        body { 
+            margin: 0; 
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif; 
+        }
     </style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel" src="app.js"></script>
+    <div id="root">
+        <div style="display: flex; justify-content: center; align-items: center; height: 100vh; font-size: 18px;">
+            Carregando Sistema de Pontuação...
+        </div>
+    </div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        const { Calendar, Trophy, Gift, TrendingUp, Plus, Minus, Star, AlertTriangle, Wallet, History, BarChart3, Settings, Users, Share2, Edit3, Trash2, Save, X, UserPlus, Download, Upload } = lucide;
+
+        // COLE AQUI O CÓDIGO COMPLETO DO COMPONENTE (sem as linhas import/export)
+        const KidsPointsApp = () => {
+          // Todo o código do componente vai aqui...
+          return React.createElement('div', { className: 'min-h-screen bg-gray-50' }, 
+            React.createElement('div', { className: 'flex items-center justify-center h-screen' },
+              React.createElement('h1', { className: 'text-2xl' }, 'Sistema em desenvolvimento...')
+            )
+          );
+        };
+
+        ReactDOM.render(React.createElement(KidsPointsApp), document.getElementById('root'));
+    </script>
 </body>
 </html>
