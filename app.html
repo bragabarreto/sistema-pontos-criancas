@@ -971,22 +971,42 @@
         async function initializeGoogleDrive() {
             try {
                 updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
+                console.log('🔄 Iniciando carregamento do Google Drive...');
                 
-                // Aguardar o carregamento da API do Google
+                // Aguardar o carregamento da API do Google com timeout
                 await new Promise((resolve, reject) => {
+                    const timeout = setTimeout(() => {
+                        reject(new Error('Timeout ao carregar Google API'));
+                    }, 10000); // 10 segundos timeout
+                    
                     if (typeof gapi === 'undefined') {
+                        console.log('📥 Carregando Google API...');
                         const script = document.createElement('script');
                         script.src = 'https://apis.google.com/js/api.js';
                         script.onload = () => {
-                            gapi.load('auth2:client', resolve);
+                            console.log('✅ Google API carregada');
+                            clearTimeout(timeout);
+                            gapi.load('auth2:client', () => {
+                                console.log('✅ Auth2 e Client carregados');
+                                resolve();
+                            });
                         };
-                        script.onerror = reject;
+                        script.onerror = (error) => {
+                            clearTimeout(timeout);
+                            reject(new Error('Erro ao carregar Google API: ' + error));
+                        };
                         document.head.appendChild(script);
                     } else {
-                        gapi.load('auth2:client', resolve);
+                        console.log('✅ Google API já disponível');
+                        clearTimeout(timeout);
+                        gapi.load('auth2:client', () => {
+                            console.log('✅ Auth2 e Client carregados');
+                            resolve();
+                        });
                     }
                 });
                 
+                console.log('🔧 Inicializando cliente Google...');
                 await gapi.client.init({
                     apiKey: GOOGLE_CONFIG.apiKey,
                     clientId: GOOGLE_CONFIG.clientId,
@@ -994,22 +1014,27 @@
                     scope: GOOGLE_CONFIG.scopes
                 });
                 
+                console.log('📁 Carregando Google Drive API...');
                 await loadGoogleDriveAPI();
                 
                 const authInstance = gapi.auth2.getAuthInstance();
+                console.log('🔐 Verificando status de autenticação...');
                 
                 if (authInstance.isSignedIn.get()) {
                     updateSyncStatus('connected', '✅ Conectado ao Google Drive');
+                    console.log('✅ Usuário já autenticado');
                     await loadData();
                 } else {
-                    updateSyncStatus('disconnected', '❌ Clique em "Conectar" para sincronizar');
+                    updateSyncStatus('disconnected', '🔗 Clique em "Conectar" para sincronizar');
+                    console.log('ℹ️ Usuário não autenticado');
                 }
                 
-                console.log('✅ Google Drive inicializado');
+                console.log('✅ Google Drive inicializado com sucesso');
                 
             } catch (error) {
                 console.error('❌ Erro ao inicializar Google Drive:', error);
-                updateSyncStatus('disconnected', '❌ Erro na inicialização - usando dados locais');
+                updateSyncStatus('disconnected', '❌ Erro na conexão - usando dados locais');
+                showNotification('Erro ao conectar com Google Drive. Usando dados locais.', 'error');
                 
                 // Fallback to local storage
                 loadDataLocal();
@@ -1052,24 +1077,48 @@
         // Connect to Google Drive
         async function connectGoogleDrive() {
             try {
+                console.log('🔗 Tentando conectar ao Google Drive...');
+                
+                if (!isGoogleDriveReady) {
+                    console.log('❌ Google Drive não está pronto');
+                    showNotification('Google Drive não está pronto. Recarregue a página.', 'error');
+                    return;
+                }
+                
                 updateSyncStatus('disconnected', '🔄 Conectando...');
                 
                 const authInstance = gapi.auth2.getAuthInstance();
-                await authInstance.signIn({
-                    scope: GOOGLE_CONFIG.scopes
+                console.log('🔐 Iniciando processo de autenticação...');
+                
+                const user = await authInstance.signIn({
+                    prompt: 'select_account'
                 });
                 
-                await loadGoogleDriveAPI();
-                updateSyncStatus('connected', '✅ Conectado ao Google Drive');
+                console.log('👤 Usuário autenticado:', user.getBasicProfile().getEmail());
                 
-                // Sync data after connection
-                await syncToDrive();
-                showNotification('Conectado ao Google Drive!');
+                if (user.isSignedIn()) {
+                    updateSyncStatus('connected', '✅ Conectado ao Google Drive');
+                    await loadData();
+                    showNotification('Conectado ao Google Drive com sucesso!', 'success');
+                    console.log('✅ Conexão estabelecida com sucesso');
+                } else {
+                    throw new Error('Falha na autenticação - usuário não está logado');
+                }
                 
             } catch (error) {
-                console.error('Erro ao conectar:', error);
+                console.error('❌ Erro ao conectar:', error);
                 updateSyncStatus('disconnected', '❌ Erro na conexão');
-                showNotification('Erro ao conectar ao Google Drive', 'error');
+                
+                let errorMessage = 'Erro ao conectar com Google Drive';
+                if (error.error === 'popup_closed_by_user') {
+                    errorMessage = 'Conexão cancelada pelo usuário';
+                } else if (error.error === 'access_denied') {
+                    errorMessage = 'Acesso negado pelo usuário';
+                } else if (error.message) {
+                    errorMessage = error.message;
+                }
+                
+                showNotification(errorMessage, 'error');
             }
         }
         
