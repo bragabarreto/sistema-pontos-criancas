@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Pontuação - Luiza e Miguel</title>
+    <script src="https://apis.google.com/js/api.js"></script>
     <style>
         * {
             margin: 0;
@@ -1013,13 +1014,17 @@
         async function initializeGoogleDrive() {
             try {
                 console.log('🔄 Iniciando inicialização do Google Drive...');
-                updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
                 
-                // Carregar API do Google
-                await loadGoogleAPI();
+                // Load auth2 and client
+                await new Promise((resolve, reject) => {
+                    gapi.load('auth2:client', {
+                        callback: resolve,
+                        onerror: reject
+                    });
+                });
                 
                 console.log('🔧 Inicializando cliente Google...');
-                await window.gapi.client.init({
+                await gapi.client.init({
                     apiKey: GOOGLE_CONFIG.apiKey,
                     clientId: GOOGLE_CONFIG.clientId,
                     discoveryDocs: [GOOGLE_CONFIG.discoveryDoc],
@@ -1027,9 +1032,9 @@
                 });
                 
                 console.log('📁 Carregando Google Drive API...');
-                await window.gapi.client.load('drive', 'v3');
+                await gapi.client.load('drive', 'v3');
                 
-                authInstance = window.gapi.auth2.getAuthInstance();
+                authInstance = gapi.auth2.getAuthInstance();
                 isGoogleDriveReady = true;
                 
                 console.log('🔐 Verificando status de autenticação...');
@@ -1151,7 +1156,7 @@
                 console.log('🔍 Procurando arquivo no Google Drive...');
                 
                 // Search for existing file
-                const response = await window.gapi.client.drive.files.list({
+                const response = await gapi.client.drive.files.list({
                     q: "name='kids_points_system.json' and parents in 'appDataFolder'",
                     spaces: 'appDataFolder'
                 });
@@ -1169,7 +1174,7 @@
                     parents: ['appDataFolder']
                 };
                 
-                const createResponse = await window.gapi.client.drive.files.create({
+                const createResponse = await gapi.client.drive.files.create({
                     resource: fileMetadata
                 });
                 
@@ -1971,15 +1976,22 @@
             updateChildSelector();
             updateDisplay();
             
-            // Try to initialize Google Drive with timeout
+            // Initialize Google Drive when ready
             updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
             
-            setTimeout(() => {
-                initializeGoogleDrive().catch(error => {
-                    console.log('⚠️ Falha ao carregar Google Drive, usando dados locais:', error);
-                    updateSyncStatus('disconnected', '🔗 Clique em "Conectar" para sincronizar');
-                });
-            }, 2000); // Aguardar 2 segundos para a API carregar
+            // Wait for gapi to be available
+            function waitForGapi() {
+                if (typeof gapi !== 'undefined') {
+                    console.log('✅ GAPI disponível, inicializando...');
+                    initializeGoogleDrive();
+                } else {
+                    console.log('⏳ Aguardando GAPI...');
+                    setTimeout(waitForGapi, 500);
+                }
+            }
+            
+            // Start waiting for gapi
+            setTimeout(waitForGapi, 1000);
             
             console.log('✅ Sistema inicializado');
         });
