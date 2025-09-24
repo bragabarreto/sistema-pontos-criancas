@@ -50,34 +50,6 @@
             font-weight: 600;
         }
         
-        .tabs {
-            display: flex;
-            background: white;
-            border-radius: 15px;
-            padding: 5px;
-            margin-bottom: 30px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-        }
-        
-        .tab {
-            flex: 1;
-            padding: 15px;
-            text-align: center;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            transition: all 0.3s ease;
-        }
-        
-        .tab.active {
-            background: #667eea;
-            color: white;
-        }
-        
-        .tab:not(.active):hover {
-            background: #f8f9fa;
-        }
-        
         .child-selector {
             display: flex;
             background: white;
@@ -103,6 +75,34 @@
         }
         
         .child-tab:not(.active):hover {
+            background: #f8f9fa;
+        }
+        
+        .tabs {
+            display: flex;
+            background: white;
+            border-radius: 15px;
+            padding: 5px;
+            margin-bottom: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        .tab {
+            flex: 1;
+            padding: 15px;
+            text-align: center;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .tab.active {
+            background: #667eea;
+            color: white;
+        }
+        
+        .tab:not(.active):hover {
             background: #f8f9fa;
         }
         
@@ -140,6 +140,49 @@
             font-weight: 800;
         }
         
+        .saldo-config {
+            background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .saldo-config h3 {
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .saldo-form {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+        
+        .saldo-form label {
+            font-weight: 600;
+            margin-bottom: 5px;
+            display: block;
+        }
+        
+        .saldo-form input {
+            width: 100%;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+        
+        .saldo-info {
+            background: rgba(255,255,255,0.1);
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        
         .categories-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
@@ -152,11 +195,6 @@
             border-radius: 12px;
             padding: 20px;
             transition: all 0.3s ease;
-        }
-        
-        .category-card:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
         }
         
         .category-card.positive {
@@ -216,7 +254,7 @@
             padding: 10px;
             background: rgba(255,255,255,0.1);
             border-radius: 8px;
-            cursor: pointer;
+            cursor: move;
             transition: all 0.3s ease;
             position: relative;
         }
@@ -228,6 +266,13 @@
         .activity-item.dragging {
             opacity: 0.5;
             transform: rotate(5deg);
+        }
+        
+        .drag-handle {
+            cursor: move;
+            color: rgba(255,255,255,0.7);
+            margin-right: 10px;
+            font-weight: bold;
         }
         
         .activity-content {
@@ -242,13 +287,55 @@
             flex: 1;
         }
         
-        .activity-actions {
+        .activity-controls {
             display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .activity-counter {
+            background: rgba(255,255,255,0.2);
+            border-radius: 20px;
+            padding: 2px;
+            display: flex;
+            align-items: center;
             gap: 5px;
             margin-right: 10px;
         }
         
-        .edit-btn, .delete-btn, .move-btn {
+        .counter-btn {
+            background: rgba(255,255,255,0.3);
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+        }
+        
+        .counter-btn:hover {
+            background: rgba(255,255,255,0.5);
+        }
+        
+        .counter-display {
+            min-width: 20px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 12px;
+        }
+        
+        .activity-actions {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .edit-btn, .delete-btn {
             background: rgba(255,255,255,0.3);
             border: none;
             border-radius: 4px;
@@ -259,7 +346,7 @@
             transition: all 0.3s ease;
         }
         
-        .edit-btn:hover, .move-btn:hover {
+        .edit-btn:hover {
             background: rgba(255,255,255,0.5);
         }
         
@@ -274,90 +361,61 @@
             text-align: right;
         }
         
-        .expenses-section {
-            margin-top: 30px;
-        }
-        
-        .expense-form {
-            display: flex;
-            gap: 10px;
+        .multiplier-controls {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
             margin-bottom: 20px;
-            flex-wrap: wrap;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 12px;
         }
         
-        .expense-form input, .expense-form select {
-            padding: 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 16px;
+        .multiplier-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
-        .expense-form input[type="text"] {
-            flex: 2;
-            min-width: 200px;
+        .multiplier-item label {
+            font-weight: 600;
+            min-width: 80px;
         }
         
-        .expense-form input[type="number"] {
+        .multiplier-item input {
             flex: 1;
-            min-width: 100px;
+            padding: 8px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
         }
         
-        .expense-form button {
+        .btn {
             padding: 12px 24px;
-            background: #ef4444;
-            color: white;
             border: none;
             border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            margin-right: 10px;
         }
         
-        .expense-form button:hover {
-            background: #dc2626;
+        .btn-primary {
+            background: #667eea;
+            color: white;
         }
         
-        .expense-history {
-            max-height: 300px;
-            overflow-y: auto;
+        .btn-primary:hover {
+            background: #5a6fd8;
         }
         
-        .expense-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px;
-            border-bottom: 1px solid #e1e5e9;
+        .btn-success {
+            background: #10b981;
+            color: white;
         }
         
-        .expense-item:last-child {
-            border-bottom: none;
-        }
-        
-        .expense-desc {
-            flex: 2;
-            font-weight: 500;
-        }
-        
-        .expense-date {
-            flex: 1;
-            color: #666;
-            font-size: 0.9rem;
-        }
-        
-        .expense-amount {
-            font-weight: 700;
-            color: #ef4444;
-        }
-        
-        .chart-container {
-            height: 300px;
-            margin: 20px 0;
-            background: #f8f9fa;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            color: #666;
+        .btn-success:hover {
+            background: #059669;
         }
         
         .modal {
@@ -423,92 +481,25 @@
             font-size: 16px;
         }
         
-        .btn {
-            padding: 12px 24px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            font-weight: 600;
-            font-size: 16px;
-            transition: all 0.3s ease;
-            margin-right: 10px;
-        }
-        
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-        
-        .btn-primary:hover {
-            background: #5a6fd8;
-        }
-        
-        .btn-success {
-            background: #10b981;
-            color: white;
-        }
-        
-        .btn-success:hover {
-            background: #059669;
-        }
-        
-        .btn-danger {
-            background: #ef4444;
-            color: white;
-        }
-        
-        .btn-danger:hover {
-            background: #dc2626;
-        }
-        
-        .btn-warning {
-            background: #f59e0b;
-            color: white;
-        }
-        
-        .btn-warning:hover {
-            background: #d97706;
-        }
-        
         .hidden {
             display: none;
         }
         
-        .category-management {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            margin-bottom: 20px;
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 15px 20px;
+            border-radius: 8px;
+            z-index: 1001;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
         }
         
-        .category-management h3 {
-            margin-bottom: 15px;
-            color: #333;
-        }
-        
-        .multiplier-controls {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .multiplier-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .multiplier-item label {
-            font-weight: 600;
-            min-width: 80px;
-        }
-        
-        .multiplier-item input {
-            flex: 1;
-            padding: 8px;
-            border: 2px solid #e1e5e9;
-            border-radius: 6px;
+        .notification.show {
+            transform: translateX(0);
         }
         
         .reports-grid {
@@ -520,105 +511,69 @@
         
         .report-card {
             background: #f8f9fa;
-            border-radius: 12px;
             padding: 20px;
-            border: 2px solid #e1e5e9;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
         }
         
         .report-card h3 {
-            color: #333;
             margin-bottom: 15px;
-            font-size: 1.2rem;
+            color: #333;
+            display: flex;
+            align-items: center;
+            gap: 10px;
         }
         
         .report-item {
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            padding: 8px 0;
-            border-bottom: 1px solid #e1e5e9;
+            margin-bottom: 8px;
         }
         
-        .report-item:last-child {
-            border-bottom: none;
-        }
-        
-        .report-label {
-            font-weight: 500;
-            color: #666;
-        }
-        
-        .report-value {
-            font-weight: 700;
-            color: #333;
-        }
-        
-        .report-value.positive {
+        .report-item.positive {
             color: #10b981;
         }
         
-        .report-value.negative {
+        .report-item.negative {
             color: #ef4444;
         }
         
-        .activity-history {
-            max-height: 400px;
-            overflow-y: auto;
+        .report-item.neutral {
+            color: #6b7280;
+        }
+        
+        .activities-today {
             background: #f8f9fa;
-            border-radius: 12px;
             padding: 20px;
+            border-radius: 12px;
             margin-top: 20px;
         }
         
-        .history-item {
+        .activities-today h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .today-activity {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 10px;
             background: white;
             border-radius: 8px;
-            margin-bottom: 10px;
-            border-left: 4px solid #667eea;
+            margin-bottom: 8px;
         }
         
-        .history-item.today {
-            border-left-color: #10b981;
-            background: #f0fdf4;
+        .today-activity:last-child {
+            margin-bottom: 0;
         }
         
-        .history-content {
-            flex: 1;
-        }
-        
-        .history-activity {
-            font-weight: 600;
-            margin-bottom: 2px;
-        }
-        
-        .history-datetime {
-            font-size: 0.8rem;
+        .activity-time {
+            font-size: 0.9rem;
             color: #666;
         }
         
-        .history-points {
-            font-weight: 700;
-            font-size: 1.1rem;
-        }
-        
-        .history-points.positive {
-            color: #10b981;
-        }
-        
-        .history-points.negative {
-            color: #ef4444;
-        }
-        
-        .history-actions {
-            display: flex;
-            gap: 5px;
-        }
-        
-        .history-delete {
+        .remove-today-btn {
             background: #ef4444;
             color: white;
             border: none;
@@ -628,107 +583,8 @@
             font-size: 12px;
         }
         
-        .drag-handle {
-            cursor: move;
-            padding: 5px;
-            color: rgba(255,255,255,0.7);
-        }
-        
-        .drag-handle:hover {
-            color: white;
-        }
-        
-        .initial-balance-section {
-            background: #e0f2fe;
-            border: 2px solid #0284c7;
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 20px;
-        }
-        
-        .initial-balance-section h3 {
-            color: #0284c7;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .balance-form {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 15px;
-            margin-bottom: 15px;
-        }
-        
-        .balance-item {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-        
-        .balance-item label {
-            font-weight: 600;
-            color: #0284c7;
-        }
-        
-        .balance-item input {
-            padding: 10px;
-            border: 2px solid #0284c7;
-            border-radius: 6px;
-            font-size: 16px;
-        }
-        
-        .balance-info {
-            background: rgba(2, 132, 199, 0.1);
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-        }
-        
-        .balance-info p {
-            color: #0284c7;
-            font-weight: 500;
-            margin-bottom: 5px;
-        }
-        
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
-            }
-            
-            .header h1 {
-                font-size: 2rem;
-            }
-            
-            .stats-grid {
-                grid-template-columns: repeat(2, 1fr);
-            }
-            
-            .categories-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .expense-form {
-                flex-direction: column;
-            }
-            
-            .expense-form input, .expense-form button {
-                width: 100%;
-            }
-            
-            .activity-actions {
-                flex-direction: column;
-                gap: 2px;
-            }
-            
-            .reports-grid {
-                grid-template-columns: 1fr;
-            }
-            
-            .balance-form {
-                grid-template-columns: 1fr;
-            }
+        .remove-today-btn:hover {
+            background: #dc2626;
         }
     </style>
 </head>
@@ -739,18 +595,13 @@
             <p>Luiza e Miguel - Incentivando bons comportamentos!</p>
         </div>
         
-        <!-- Display de Data/Hora -->
-        <div class="datetime-display" id="datetimeDisplay">
-            <!-- Data e hora serão inseridas aqui -->
-        </div>
+        <div class="datetime-display" id="datetime"></div>
         
-        <!-- Seletor de Criança -->
         <div class="child-selector">
             <div class="child-tab active" data-child="luiza">👧 Luiza</div>
             <div class="child-tab" data-child="miguel">👦 Miguel</div>
         </div>
         
-        <!-- Abas de Navegação -->
         <div class="tabs">
             <div class="tab active" data-tab="dashboard">📊 Dashboard</div>
             <div class="tab" data-tab="activities">🎯 Atividades</div>
@@ -759,401 +610,323 @@
             <div class="tab" data-tab="settings">⚙️ Configurações</div>
         </div>
         
-        <!-- Dashboard -->
-        <div id="dashboard" class="content">
-            <!-- Seção de Saldo Inicial -->
-            <div class="initial-balance-section">
-                <h3>💰 Configuração de Saldo Inicial</h3>
-                <div class="balance-form">
-                    <div class="balance-item">
-                        <label>Saldo Inicial (pontos):</label>
-                        <input type="number" id="initialBalance" placeholder="Ex: 100" min="0">
+        <div class="content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-content" class="tab-content">
+                <div class="saldo-config">
+                    <h3>💰 Configuração de Saldo Inicial</h3>
+                    <div class="saldo-form">
+                        <div>
+                            <label>Saldo Inicial (pontos):</label>
+                            <input type="number" id="saldo-inicial" placeholder="Ex: 100">
+                        </div>
+                        <div>
+                            <label>Data de Início:</label>
+                            <input type="date" id="data-inicio">
+                        </div>
                     </div>
-                    <div class="balance-item">
-                        <label>Data de Início:</label>
-                        <input type="date" id="startDate">
+                    <button class="btn btn-success" onclick="definirSaldoInicial()">Definir Saldo Inicial</button>
+                    <div class="saldo-info" id="saldo-info">
+                        <div><strong>Saldo Inicial:</strong> <span id="info-saldo">Não definido</span></div>
+                        <div><strong>Data de Início:</strong> <span id="info-data">Não definida</span></div>
+                        <div><strong>Dias de Uso:</strong> <span id="info-dias">0 dias</span></div>
                     </div>
                 </div>
-                <button class="btn btn-primary" onclick="setInitialBalance()">Definir Saldo Inicial</button>
-                <div class="balance-info" id="balanceInfo">
-                    <p><strong>Saldo Inicial:</strong> <span id="currentInitialBalance">Não definido</span></p>
-                    <p><strong>Data de Início:</strong> <span id="currentStartDate">Não definida</span></p>
-                    <p><strong>Dias de Uso:</strong> <span id="daysOfUse">0</span> dias</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Pontos Totais</h3>
+                        <div class="value" id="total-points">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Saldo Disponível</h3>
+                        <div class="value" id="available-balance">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pontos Este Mês</h3>
+                        <div class="value" id="month-points">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Gastos Este Mês</h3>
+                        <div class="value" id="month-expenses">R$ 0,00</div>
+                    </div>
                 </div>
             </div>
             
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Pontos Totais</h3>
-                    <div class="value" id="totalPoints">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Saldo Disponível</h3>
-                    <div class="value" id="availableBalance">R$ 0,00</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Pontos Este Mês</h3>
-                    <div class="value" id="monthlyPoints">0</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Gastos Este Mês</h3>
-                    <div class="value" id="monthlyExpenses">R$ 0,00</div>
-                </div>
-            </div>
-            
-            <div class="chart-container">
-                <div>📈 Gráfico dos últimos 7 dias (em desenvolvimento)</div>
-            </div>
-        </div>
-        
-        <!-- Atividades -->
-        <div id="activities" class="content hidden">
-            <div class="category-management">
-                <h3>⚙️ Gerenciar Multiplicadores</h3>
+            <!-- Activities Tab -->
+            <div id="activities-content" class="tab-content hidden">
                 <div class="multiplier-controls">
+                    <h3>⚙️ Gerenciar Multiplicadores</h3>
                     <div class="multiplier-item">
                         <label>Positivos:</label>
-                        <input type="number" id="positiveMultiplier" value="1" min="1">
+                        <input type="number" id="mult-positive" value="1" min="1">
                     </div>
                     <div class="multiplier-item">
                         <label>Especiais:</label>
-                        <input type="number" id="specialMultiplier" value="100" min="1">
+                        <input type="number" id="mult-special" value="50" min="1">
                     </div>
                     <div class="multiplier-item">
                         <label>Negativos:</label>
-                        <input type="number" id="negativeMultiplier" value="1" min="1">
+                        <input type="number" id="mult-negative" value="1" min="1">
                     </div>
                     <div class="multiplier-item">
                         <label>Graves:</label>
-                        <input type="number" id="graveMultiplier" value="100" min="1">
+                        <input type="number" id="mult-grave" value="100" min="1">
                     </div>
-                </div>
-                <button class="btn btn-primary" onclick="updateMultipliers()">Atualizar Multiplicadores</button>
-            </div>
-            
-            <div class="categories-grid">
-                <div class="category-card positive">
-                    <div class="category-header">
-                        <div class="category-title">✅ Positivos</div>
-                        <div class="category-multiplier" id="positiveMultiplierDisplay">x1</div>
-                    </div>
-                    <div class="activity-list" id="positiveActivities" data-category="positive">
-                        <!-- Atividades serão inseridas aqui -->
-                    </div>
+                    <button class="btn btn-primary" onclick="updateMultipliers()">Atualizar Multiplicadores</button>
                 </div>
                 
-                <div class="category-card special">
-                    <div class="category-header">
-                        <div class="category-title">⭐ Especiais</div>
-                        <div class="category-multiplier" id="specialMultiplierDisplay">x100</div>
-                    </div>
-                    <div class="activity-list" id="specialActivities" data-category="special">
-                        <!-- Atividades serão inseridas aqui -->
-                    </div>
+                <div class="categories-grid" id="categories-container">
+                    <!-- Categories will be populated by JavaScript -->
                 </div>
                 
-                <div class="category-card negative">
-                    <div class="category-header">
-                        <div class="category-title">⚠️ Negativos</div>
-                        <div class="category-multiplier" id="negativeMultiplierDisplay">x1</div>
-                    </div>
-                    <div class="activity-list" id="negativeActivities" data-category="negative">
-                        <!-- Atividades serão inseridas aqui -->
-                    </div>
-                </div>
-                
-                <div class="category-card grave">
-                    <div class="category-header">
-                        <div class="category-title">🚫 Graves</div>
-                        <div class="category-multiplier" id="graveMultiplierDisplay">x100</div>
-                    </div>
-                    <div class="activity-list" id="graveActivities" data-category="grave">
-                        <!-- Atividades serão inseridas aqui -->
+                <div class="activities-today">
+                    <h3>📋 Atividades de Hoje</h3>
+                    <div id="today-activities">
+                        <p>Nenhuma atividade registrada hoje</p>
                     </div>
                 </div>
             </div>
             
-            <!-- Histórico de Atividades do Dia -->
-            <div class="activity-history">
-                <h3>📋 Atividades de Hoje</h3>
-                <div id="todayActivities">
-                    <!-- Atividades do dia serão inseridas aqui -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- Gastos -->
-        <div id="expenses" class="content hidden">
-            <div class="expenses-section">
+            <!-- Expenses Tab -->
+            <div id="expenses-content" class="tab-content hidden">
                 <h2>💰 Controle de Gastos</h2>
                 <div class="expense-form">
-                    <input type="text" id="expenseDesc" placeholder="Descrição do gasto">
-                    <input type="number" id="expenseAmount" placeholder="Valor (R$)" step="0.01">
-                    <input type="date" id="expenseDate">
-                    <button onclick="addExpense()">Registrar Gasto</button>
+                    <input type="text" id="expense-desc" placeholder="Descrição do gasto">
+                    <input type="number" id="expense-amount" placeholder="Valor em pontos" min="1">
+                    <button class="btn btn-primary" onclick="addExpense()">Registrar Gasto</button>
                 </div>
-                
-                <div class="expense-history" id="expenseHistory">
-                    <!-- Histórico de gastos será inserido aqui -->
-                </div>
-            </div>
-        </div>
-        
-        <!-- Relatórios -->
-        <div id="reports" class="content hidden">
-            <h2>📈 Relatórios e Estatísticas Detalhados</h2>
-            
-            <div class="reports-grid">
-                <!-- Relatório do Último Dia -->
-                <div class="report-card">
-                    <h3>📅 Último Dia</h3>
-                    <div class="report-item">
-                        <span class="report-label">Condutas Positivas:</span>
-                        <span class="report-value positive" id="lastDayPositive">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Condutas Negativas:</span>
-                        <span class="report-value negative" id="lastDayNegative">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Resultado Líquido:</span>
-                        <span class="report-value" id="lastDayNet">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Padrão de Conduta:</span>
-                        <span class="report-value" id="lastDayPattern">-</span>
-                    </div>
-                </div>
-                
-                <!-- Relatório da Última Semana -->
-                <div class="report-card">
-                    <h3>📊 Última Semana</h3>
-                    <div class="report-item">
-                        <span class="report-label">Condutas Positivas:</span>
-                        <span class="report-value positive" id="lastWeekPositive">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Condutas Negativas:</span>
-                        <span class="report-value negative" id="lastWeekNegative">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Resultado Líquido:</span>
-                        <span class="report-value" id="lastWeekNet">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Padrão de Conduta:</span>
-                        <span class="report-value" id="lastWeekPattern">-</span>
-                    </div>
-                </div>
-                
-                <!-- Relatório do Último Mês -->
-                <div class="report-card">
-                    <h3>📈 Último Mês</h3>
-                    <div class="report-item">
-                        <span class="report-label">Condutas Positivas:</span>
-                        <span class="report-value positive" id="lastMonthPositive">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Condutas Negativas:</span>
-                        <span class="report-value negative" id="lastMonthNegative">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Resultado Líquido:</span>
-                        <span class="report-value" id="lastMonthNet">0</span>
-                    </div>
-                    <div class="report-item">
-                        <span class="report-label">Padrão de Conduta:</span>
-                        <span class="report-value" id="lastMonthPattern">-</span>
-                    </div>
+                <div id="expenses-list">
+                    <p>Nenhum gasto registrado</p>
                 </div>
             </div>
             
-            <div class="stats-grid">
-                <div class="stat-card">
-                    <h3>Média Diária (7 dias)</h3>
-                    <div class="value" id="dailyAverage">0</div>
+            <!-- Reports Tab -->
+            <div id="reports-content" class="tab-content hidden">
+                <h2>📈 Relatórios e Estatísticas Detalhados</h2>
+                <div class="reports-grid">
+                    <div class="report-card">
+                        <h3>📅 Último Dia</h3>
+                        <div class="report-item positive">
+                            <span>Condutas Positivas:</span>
+                            <span id="day-positive">0</span>
+                        </div>
+                        <div class="report-item negative">
+                            <span>Condutas Negativas:</span>
+                            <span id="day-negative">0</span>
+                        </div>
+                        <div class="report-item neutral">
+                            <span>Resultado Líquido:</span>
+                            <span id="day-net">0</span>
+                        </div>
+                        <div class="report-item neutral">
+                            <span>Padrão de Conduta:</span>
+                            <span id="day-pattern">Regular</span>
+                        </div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3>📊 Última Semana</h3>
+                        <div class="report-item positive">
+                            <span>Condutas Positivas:</span>
+                            <span id="week-positive">0</span>
+                        </div>
+                        <div class="report-item negative">
+                            <span>Condutas Negativas:</span>
+                            <span id="week-negative">0</span>
+                        </div>
+                        <div class="report-item neutral">
+                            <span>Resultado Líquido:</span>
+                            <span id="week-net">0</span>
+                        </div>
+                        <div class="report-item neutral">
+                            <span>Padrão de Conduta:</span>
+                            <span id="week-pattern">Regular</span>
+                        </div>
+                    </div>
+                    
+                    <div class="report-card">
+                        <h3>📈 Último Mês</h3>
+                        <div class="report-item positive">
+                            <span>Condutas Positivas:</span>
+                            <span id="month-positive">0</span>
+                        </div>
+                        <div class="report-item negative">
+                            <span>Condutas Negativas:</span>
+                            <span id="month-negative">0</span>
+                        </div>
+                        <div class="report-item neutral">
+                            <span>Resultado Líquido:</span>
+                            <span id="month-net">0</span>
+                        </div>
+                        <div class="report-item neutral">
+                            <span>Padrão de Conduta:</span>
+                            <span id="month-pattern">Regular</span>
+                        </div>
+                    </div>
                 </div>
-                <div class="stat-card">
-                    <h3>Melhor Dia</h3>
-                    <div class="value" id="bestDay">-</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Ganho</h3>
-                    <div class="value" id="totalEarned">R$ 0,00</div>
-                </div>
-                <div class="stat-card">
-                    <h3>Total Gasto</h3>
-                    <div class="value" id="totalSpent">R$ 0,00</div>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h3>Média Diária (7 dias)</h3>
+                        <div class="value" id="daily-average">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Melhor Dia</h3>
+                        <div class="value" id="best-day">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Ganho</h3>
+                        <div class="value" id="total-earned">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Total Gasto</h3>
+                        <div class="value" id="total-spent">R$ 0,00</div>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Configurações -->
-        <div id="settings" class="content hidden">
-            <h2>⚙️ Configurações</h2>
-            <div style="display: grid; gap: 20px;">
-                <button class="btn btn-primary" onclick="openModal('addActivityModal')">➕ Adicionar Nova Atividade</button>
-                <button class="btn btn-success" onclick="exportData()">📤 Exportar Dados</button>
-                <button class="btn btn-primary" onclick="importData()">📥 Importar Dados</button>
-                <button class="btn btn-danger" onclick="resetData()">🗑️ Resetar Todos os Dados</button>
+            
+            <!-- Settings Tab -->
+            <div id="settings-content" class="tab-content hidden">
+                <h2>⚙️ Configurações</h2>
+                <button class="btn btn-primary" onclick="showAddActivityModal()">Adicionar Nova Atividade</button>
+                <button class="btn btn-success" onclick="exportData()">Exportar Dados</button>
+                <button class="btn btn-primary" onclick="importData()">Importar Dados</button>
+                <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImport(event)">
             </div>
         </div>
     </div>
     
-    <!-- Modal para adicionar atividade -->
-    <div id="addActivityModal" class="modal">
+    <!-- Modal for Adding/Editing Activities -->
+    <div id="activity-modal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title">Adicionar Nova Atividade</h3>
-                <button class="close-btn" onclick="closeModal('addActivityModal')">&times;</button>
+                <h2 class="modal-title" id="modal-title">Adicionar Atividade</h2>
+                <button class="close-btn" onclick="closeModal()">&times;</button>
             </div>
             <div class="form-group">
                 <label>Nome da Atividade:</label>
-                <input type="text" id="newActivityName" placeholder="Ex: Organizar gavetas">
+                <input type="text" id="activity-name" placeholder="Ex: Escovar os dentes">
+            </div>
+            <div class="form-group">
+                <label>Pontos Base:</label>
+                <input type="number" id="activity-points" placeholder="Ex: 1" min="-100" max="100">
             </div>
             <div class="form-group">
                 <label>Categoria:</label>
-                <select id="newActivityCategory">
+                <select id="activity-category">
                     <option value="positive">Positivos</option>
                     <option value="special">Especiais</option>
                     <option value="negative">Negativos</option>
                     <option value="grave">Graves</option>
                 </select>
             </div>
-            <div class="form-group">
-                <label>Pontos Base:</label>
-                <input type="number" id="newActivityPoints" placeholder="Ex: 1, 5, 10">
-            </div>
-            <button class="btn btn-primary" onclick="addNewActivity()">Adicionar Atividade</button>
+            <button class="btn btn-success" onclick="saveActivity()">Salvar</button>
+            <button class="btn" onclick="closeModal()">Cancelar</button>
         </div>
     </div>
     
-    <!-- Modal para editar atividade -->
-    <div id="editActivityModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">Editar Atividade</h3>
-                <button class="close-btn" onclick="closeModal('editActivityModal')">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>Nome da Atividade:</label>
-                <input type="text" id="editActivityName">
-            </div>
-            <div class="form-group">
-                <label>Categoria:</label>
-                <select id="editActivityCategory">
-                    <option value="positive">Positivos</option>
-                    <option value="special">Especiais</option>
-                    <option value="negative">Negativos</option>
-                    <option value="grave">Graves</option>
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Pontos Base:</label>
-                <input type="number" id="editActivityPoints">
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <button class="btn btn-primary" onclick="saveActivityEdit()">Salvar Alterações</button>
-                <button class="btn btn-danger" onclick="deleteActivity()">Excluir Atividade</button>
-            </div>
-        </div>
-    </div>
-
+    <!-- Notification -->
+    <div id="notification" class="notification"></div>
+    
     <script>
-        // Estado da aplicação
+        // Global variables
         let currentChild = 'luiza';
         let currentTab = 'dashboard';
         let editingActivityId = null;
         let draggedElement = null;
         
-        let data = {
+        // Data structure
+        const defaultData = {
             luiza: {
+                saldoInicial: 0,
+                dataInicio: null,
                 activities: [],
                 expenses: [],
-                totalPoints: 0,
-                initialBalance: 0,
-                startDate: null
+                todayActivities: [],
+                multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
             },
             miguel: {
+                saldoInicial: 0,
+                dataInicio: null,
                 activities: [],
                 expenses: [],
-                totalPoints: 0,
-                initialBalance: 0,
-                startDate: null
-            },
-            multipliers: {
-                positive: 1,
-                special: 100,
-                negative: 1,
-                grave: 100
-            },
-            customActivities: {
-                positive: [
-                    { id: 1, name: 'Arrumar a cama', basePoints: 1, order: 0 },
-                    { id: 2, name: 'Escovar os dentes', basePoints: 1, order: 1 },
-                    { id: 3, name: 'Guardar brinquedos', basePoints: 1, order: 2 },
-                    { id: 4, name: 'Ajudar nas tarefas', basePoints: 1, order: 3 }
-                ],
-                special: [
-                    { id: 5, name: 'Ler um livro completo', basePoints: 1, order: 0 },
-                    { id: 6, name: 'Fazer lição sem ajuda', basePoints: 0.5, order: 1 },
-                    { id: 7, name: 'Comer frutas/verduras', basePoints: 0.3, order: 2 },
-                    { id: 8, name: 'Ser gentil com irmão', basePoints: 0.25, order: 3 }
-                ],
-                negative: [
-                    { id: 9, name: 'Não escovar os dentes', basePoints: 1, order: 0 },
-                    { id: 10, name: 'Deixar quarto bagunçado', basePoints: 1, order: 1 },
-                    { id: 11, name: 'Não fazer lição', basePoints: 2, order: 2 },
-                    { id: 12, name: 'Desobedecer', basePoints: 3, order: 3 }
-                ],
-                grave: [
-                    { id: 13, name: 'Bater no irmão', basePoints: 1, order: 0 },
-                    { id: 14, name: 'Mentir', basePoints: 0.5, order: 1 },
-                    { id: 15, name: 'Quebrar algo de propósito', basePoints: 0.75, order: 2 },
-                    { id: 16, name: 'Gritar/fazer birra', basePoints: 0.3, order: 3 }
-                ]
+                todayActivities: [],
+                multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
             }
         };
-
-        // Carregar dados do localStorage
+        
+        const defaultActivities = {
+            positive: [
+                { id: 'pos1', name: 'Escovar os dentes', points: 1, count: 0 },
+                { id: 'pos2', name: 'Guardar brinquedos', points: 1, count: 0 },
+                { id: 'pos3', name: 'Ajudar nas tarefas', points: 1, count: 0 }
+            ],
+            special: [
+                { id: 'spe1', name: 'Ler um livro completo', points: 1, count: 0 },
+                { id: 'spe2', name: 'Fazer lição sem ajuda', points: 1, count: 0 },
+                { id: 'spe3', name: 'Comer frutas/verduras', points: 1, count: 0 }
+            ],
+            negative: [
+                { id: 'neg1', name: 'Não escovar os dentes', points: 1, count: 0 },
+                { id: 'neg2', name: 'Deixar quarto bagunçado', points: 1, count: 0 },
+                { id: 'neg3', name: 'Não fazer lição', points: 2, count: 0 }
+            ],
+            grave: [
+                { id: 'gra1', name: 'Bater no irmão', points: 1, count: 0 },
+                { id: 'gra2', name: 'Mentir', points: 1, count: 0 },
+                { id: 'gra3', name: 'Quebrar algo de propósito', points: 1, count: 0 }
+            ]
+        };
+        
+        // Load data from localStorage
         function loadData() {
-            const savedData = localStorage.getItem('kidsPointsAdvanced');
-            if (savedData) {
-                const parsed = JSON.parse(savedData);
-                data = {
-                    ...data,
-                    ...parsed,
-                    multipliers: parsed.multipliers || data.multipliers,
-                    customActivities: parsed.customActivities || data.customActivities
-                };
+            const saved = localStorage.getItem('kidsPointsSystem');
+            if (saved) {
+                try {
+                    const data = JSON.parse(saved);
+                    return { ...defaultData, ...data };
+                } catch (e) {
+                    console.error('Error loading data:', e);
+                    return initializeDefaultData();
+                }
+            }
+            return initializeDefaultData();
+        }
+        
+        function initializeDefaultData() {
+            const data = JSON.parse(JSON.stringify(defaultData));
+            Object.keys(defaultActivities).forEach(category => {
+                data.luiza.activities = data.luiza.activities || [];
+                data.miguel.activities = data.miguel.activities || [];
                 
-                // Garantir que todas as atividades tenham ordem
-                Object.keys(data.customActivities).forEach(category => {
-                    data.customActivities[category].forEach((activity, index) => {
-                        if (activity.order === undefined) {
-                            activity.order = index;
-                        }
-                    });
-                });
-                
-                // Garantir que cada criança tenha saldo inicial e data de início
-                ['luiza', 'miguel'].forEach(child => {
-                    if (!data[child].hasOwnProperty('initialBalance')) {
-                        data[child].initialBalance = 0;
+                defaultActivities[category].forEach(activity => {
+                    if (!data.luiza.activities.find(a => a.id === activity.id)) {
+                        data.luiza.activities.push({ ...activity, category });
                     }
-                    if (!data[child].hasOwnProperty('startDate')) {
-                        data[child].startDate = null;
+                    if (!data.miguel.activities.find(a => a.id === activity.id)) {
+                        data.miguel.activities.push({ ...activity, category });
                     }
                 });
+            });
+            return data;
+        }
+        
+        // Save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('kidsPointsSystem', JSON.stringify(appData));
+                console.log('Data saved successfully');
+            } catch (e) {
+                console.error('Error saving data:', e);
+                showNotification('Erro ao salvar dados!', 'error');
             }
         }
-
-        // Salvar dados no localStorage
-        function saveData() {
-            localStorage.setItem('kidsPointsAdvanced', JSON.stringify(data));
-        }
-
-        // Atualizar data e hora
+        
+        // Initialize app data
+        let appData = loadData();
+        
+        // Update datetime display
         function updateDateTime() {
             const now = new Date();
             const options = {
@@ -1165,811 +938,556 @@
                 minute: '2-digit',
                 second: '2-digit'
             };
-            document.getElementById('datetimeDisplay').textContent = 
-                now.toLocaleDateString('pt-BR', options);
+            document.getElementById('datetime').textContent = now.toLocaleDateString('pt-BR', options);
         }
-
-        // Definir saldo inicial
-        function setInitialBalance() {
-            const balance = parseInt(document.getElementById('initialBalance').value) || 0;
-            const startDate = document.getElementById('startDate').value;
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
             
-            if (!startDate) {
-                alert('Por favor, defina uma data de início!');
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Switch child
+        function switchChild(child) {
+            currentChild = child;
+            document.querySelectorAll('.child-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelector(`[data-child="${child}"]`).classList.add('active');
+            
+            updateDisplay();
+            saveData();
+        }
+        
+        // Switch tab
+        function switchTab(tab) {
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(t => {
+                t.classList.remove('active');
+            });
+            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            
+            // Update content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${tab}-content`).classList.remove('hidden');
+            
+            updateDisplay();
+        }
+        
+        // Define saldo inicial
+        function definirSaldoInicial() {
+            const saldo = parseInt(document.getElementById('saldo-inicial').value) || 0;
+            const data = document.getElementById('data-inicio').value;
+            
+            if (!data) {
+                showNotification('Por favor, defina uma data de início!', 'error');
                 return;
             }
             
-            data[currentChild].initialBalance = balance;
-            data[currentChild].startDate = startDate;
-            data[currentChild].totalPoints = balance; // Definir pontos totais como saldo inicial
+            appData[currentChild].saldoInicial = saldo;
+            appData[currentChild].dataInicio = data;
             
             saveData();
-            updateBalanceInfo();
             updateDisplay();
-            showNotification(`Saldo inicial de ${balance} pontos definido para ${currentChild === 'luiza' ? 'Luiza' : 'Miguel'}!`);
+            showNotification('Saldo inicial definido com sucesso!');
         }
-
-        // Atualizar informações do saldo inicial
-        function updateBalanceInfo() {
-            const childData = data[currentChild];
+        
+        // Calculate total points
+        function calculateTotalPoints(child) {
+            const childData = appData[child];
+            let total = childData.saldoInicial || 0;
             
-            document.getElementById('currentInitialBalance').textContent = 
-                childData.initialBalance > 0 ? `${childData.initialBalance} pontos` : 'Não definido';
+            childData.todayActivities.forEach(activity => {
+                const multiplier = childData.multipliers[activity.category] || 1;
+                if (activity.category === 'negative' || activity.category === 'grave') {
+                    total -= activity.points * multiplier * activity.count;
+                } else {
+                    total += activity.points * multiplier * activity.count;
+                }
+            });
             
-            document.getElementById('currentStartDate').textContent = 
-                childData.startDate ? new Date(childData.startDate).toLocaleDateString('pt-BR') : 'Não definida';
+            return Math.max(0, total);
+        }
+        
+        // Add/remove activity count
+        function adjustActivityCount(activityId, change) {
+            const childData = appData[currentChild];
+            const activity = childData.activities.find(a => a.id === activityId);
             
-            if (childData.startDate) {
-                const startDate = new Date(childData.startDate);
-                const today = new Date();
-                const diffTime = Math.abs(today - startDate);
-                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                document.getElementById('daysOfUse').textContent = diffDays;
-            } else {
-                document.getElementById('daysOfUse').textContent = '0';
+            if (!activity) return;
+            
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            
+            // Find or create today's activity record
+            let todayActivity = childData.todayActivities.find(a => 
+                a.id === activityId && a.date === today
+            );
+            
+            if (!todayActivity) {
+                todayActivity = {
+                    id: activityId,
+                    name: activity.name,
+                    points: activity.points,
+                    category: activity.category,
+                    count: 0,
+                    date: today,
+                    time: now.toLocaleTimeString('pt-BR')
+                };
+                childData.todayActivities.push(todayActivity);
             }
             
-            // Atualizar campos do formulário
-            document.getElementById('initialBalance').value = childData.initialBalance || '';
-            document.getElementById('startDate').value = childData.startDate || '';
-        }
-
-        // Inicialização
-        document.addEventListener('DOMContentLoaded', function() {
-            loadData();
-            setupEventListeners();
-            updateMultiplierInputs();
-            renderActivities();
-            updateDisplay();
-            updateBalanceInfo();
-            updateDateTime();
+            todayActivity.count = Math.max(0, todayActivity.count + change);
+            todayActivity.time = now.toLocaleTimeString('pt-BR');
             
-            // Atualizar data/hora a cada segundo
-            setInterval(updateDateTime, 1000);
+            // Remove if count is 0
+            if (todayActivity.count === 0) {
+                const index = childData.todayActivities.indexOf(todayActivity);
+                childData.todayActivities.splice(index, 1);
+            }
             
-            // Definir data atual no campo de gasto
-            document.getElementById('expenseDate').value = new Date().toISOString().split('T')[0];
-        });
-
-        function setupEventListeners() {
-            // Tabs de navegação
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    switchTab(this.dataset.tab);
-                });
-            });
-
-            // Seletor de criança
-            document.querySelectorAll('.child-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    switchChild(this.dataset.child);
-                });
-            });
-        }
-
-        function switchTab(tabName) {
-            // Atualizar tabs
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-
-            // Mostrar conteúdo
-            document.querySelectorAll('.content').forEach(content => {
-                content.classList.add('hidden');
-            });
-            document.getElementById(tabName).classList.remove('hidden');
-
-            currentTab = tabName;
-            if (tabName === 'activities') {
-                renderActivities();
-                renderTodayActivities();
-            } else if (tabName === 'reports') {
-                updateDetailedReports();
-            } else if (tabName === 'dashboard') {
-                updateBalanceInfo();
-            }
+            saveData();
             updateDisplay();
+            
+            const action = change > 0 ? 'adicionada' : 'removida';
+            showNotification(`Atividade "${activity.name}" ${action}!`);
         }
-
-        function switchChild(childName) {
-            // Atualizar seletor
-            document.querySelectorAll('.child-tab').forEach(tab => {
-                tab.classList.remove('active');
-            });
-            document.querySelector(`[data-child="${childName}"]`).classList.add('active');
-
-            currentChild = childName;
-            updateDisplay();
-            updateBalanceInfo();
-            if (currentTab === 'activities') {
-                renderTodayActivities();
-            } else if (currentTab === 'reports') {
-                updateDetailedReports();
-            }
-        }
-
-        function updateMultiplierInputs() {
-            document.getElementById('positiveMultiplier').value = data.multipliers.positive;
-            document.getElementById('specialMultiplier').value = data.multipliers.special;
-            document.getElementById('negativeMultiplier').value = data.multipliers.negative;
-            document.getElementById('graveMultiplier').value = data.multipliers.grave;
-        }
-
+        
+        // Update multipliers
         function updateMultipliers() {
-            data.multipliers.positive = parseInt(document.getElementById('positiveMultiplier').value);
-            data.multipliers.special = parseInt(document.getElementById('specialMultiplier').value);
-            data.multipliers.negative = parseInt(document.getElementById('negativeMultiplier').value);
-            data.multipliers.grave = parseInt(document.getElementById('graveMultiplier').value);
+            const childData = appData[currentChild];
+            childData.multipliers.positive = parseInt(document.getElementById('mult-positive').value) || 1;
+            childData.multipliers.special = parseInt(document.getElementById('mult-special').value) || 50;
+            childData.multipliers.negative = parseInt(document.getElementById('mult-negative').value) || 1;
+            childData.multipliers.grave = parseInt(document.getElementById('mult-grave').value) || 100;
             
             saveData();
-            renderActivities();
-            showNotification('Multiplicadores atualizados com sucesso!');
+            updateDisplay();
+            showNotification('Multiplicadores atualizados!');
         }
-
-        function renderActivities() {
-            const categories = ['positive', 'special', 'negative', 'grave'];
-            
-            categories.forEach(category => {
-                const container = document.getElementById(`${category}Activities`);
-                const multiplierDisplay = document.getElementById(`${category}MultiplierDisplay`);
-                const multiplier = data.multipliers[category];
-                
-                multiplierDisplay.textContent = `x${multiplier}`;
-                
-                // Ordenar atividades por ordem
-                const sortedActivities = data.customActivities[category].sort((a, b) => a.order - b.order);
-                
-                container.innerHTML = sortedActivities.map(activity => {
-                    const finalPoints = calculateFinalPoints(activity.basePoints, category);
-                    return `
-                        <div class="activity-item" data-activity-id="${activity.id}" draggable="true">
-                            <div class="activity-content">
-                                <span class="drag-handle">⋮⋮</span>
-                                <span class="activity-name">${activity.name}</span>
-                                <div class="activity-actions">
-                                    <button class="edit-btn" onclick="editActivity(${activity.id}, '${category}')">✏️</button>
-                                    <button class="delete-btn" onclick="confirmDeleteActivity(${activity.id}, '${category}')">🗑️</button>
-                                </div>
-                                <span class="activity-points">${finalPoints > 0 ? '+' : ''}${finalPoints}</span>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                // Adicionar event listeners para drag and drop
-                setupDragAndDrop(container, category);
-                
-                // Adicionar event listeners para clique nas atividades
-                container.querySelectorAll('.activity-item').forEach(item => {
-                    item.addEventListener('click', function(e) {
-                        // Não executar se clicou nos botões de ação ou drag handle
-                        if (e.target.classList.contains('edit-btn') || 
-                            e.target.classList.contains('delete-btn') ||
-                            e.target.classList.contains('drag-handle')) {
-                            return;
-                        }
-                        
-                        const activityId = parseInt(this.dataset.activityId);
-                        const activity = data.customActivities[category].find(a => a.id === activityId);
-                        if (activity) {
-                            const finalPoints = calculateFinalPoints(activity.basePoints, category);
-                            addActivity(activity.name, finalPoints);
-                        }
-                    });
-                });
-            });
+        
+        // Show add activity modal
+        function showAddActivityModal() {
+            editingActivityId = null;
+            document.getElementById('modal-title').textContent = 'Adicionar Atividade';
+            document.getElementById('activity-name').value = '';
+            document.getElementById('activity-points').value = '';
+            document.getElementById('activity-category').value = 'positive';
+            document.getElementById('activity-modal').style.display = 'block';
         }
-
-        function setupDragAndDrop(container, category) {
-            container.addEventListener('dragstart', function(e) {
-                if (e.target.classList.contains('activity-item')) {
-                    draggedElement = e.target;
-                    e.target.classList.add('dragging');
-                }
-            });
-
-            container.addEventListener('dragend', function(e) {
-                if (e.target.classList.contains('activity-item')) {
-                    e.target.classList.remove('dragging');
-                    draggedElement = null;
-                }
-            });
-
-            container.addEventListener('dragover', function(e) {
-                e.preventDefault();
-                const draggingItem = container.querySelector('.dragging');
-                const siblings = [...container.querySelectorAll('.activity-item:not(.dragging)')];
-                
-                const nextSibling = siblings.find(sibling => {
-                    return e.clientY <= sibling.getBoundingClientRect().top + sibling.offsetHeight / 2;
-                });
-                
-                container.insertBefore(draggingItem, nextSibling);
-            });
-
-            container.addEventListener('drop', function(e) {
-                e.preventDefault();
-                updateActivityOrder(category);
-            });
-        }
-
-        function updateActivityOrder(category) {
-            const container = document.getElementById(`${category}Activities`);
-            const items = container.querySelectorAll('.activity-item');
-            
-            items.forEach((item, index) => {
-                const activityId = parseInt(item.dataset.activityId);
-                const activity = data.customActivities[category].find(a => a.id === activityId);
-                if (activity) {
-                    activity.order = index;
-                }
-            });
-            
-            saveData();
-            showNotification('Ordem das atividades atualizada!');
-        }
-
-        function calculateFinalPoints(basePoints, category) {
-            let finalPoints = basePoints * data.multipliers[category];
-            if (category === 'negative' || category === 'grave') {
-                finalPoints = -Math.abs(finalPoints);
-            }
-            return Math.round(finalPoints);
-        }
-
-        function editActivity(activityId, category) {
-            const activity = data.customActivities[category].find(a => a.id === activityId);
+        
+        // Show edit activity modal
+        function showEditActivityModal(activityId) {
+            const activity = appData[currentChild].activities.find(a => a.id === activityId);
             if (!activity) return;
             
             editingActivityId = activityId;
-            document.getElementById('editActivityName').value = activity.name;
-            document.getElementById('editActivityCategory').value = category;
-            document.getElementById('editActivityPoints').value = activity.basePoints;
-            
-            openModal('editActivityModal');
+            document.getElementById('modal-title').textContent = 'Editar Atividade';
+            document.getElementById('activity-name').value = activity.name;
+            document.getElementById('activity-points').value = activity.points;
+            document.getElementById('activity-category').value = activity.category;
+            document.getElementById('activity-modal').style.display = 'block';
         }
-
-        function saveActivityEdit() {
-            if (!editingActivityId) return;
+        
+        // Save activity
+        function saveActivity() {
+            const name = document.getElementById('activity-name').value.trim();
+            const points = parseInt(document.getElementById('activity-points').value) || 1;
+            const category = document.getElementById('activity-category').value;
             
-            const newName = document.getElementById('editActivityName').value.trim();
-            const newCategory = document.getElementById('editActivityCategory').value;
-            const newBasePoints = parseFloat(document.getElementById('editActivityPoints').value);
-            
-            if (!newName || !newBasePoints) {
-                alert('Preencha todos os campos!');
+            if (!name) {
+                showNotification('Por favor, insira um nome para a atividade!', 'error');
                 return;
             }
             
-            // Encontrar a atividade atual
-            let currentCategory = null;
-            let activityIndex = -1;
+            const childData = appData[currentChild];
             
-            for (const [category, activities] of Object.entries(data.customActivities)) {
-                const index = activities.findIndex(a => a.id === editingActivityId);
-                if (index !== -1) {
-                    currentCategory = category;
-                    activityIndex = index;
-                    break;
+            if (editingActivityId) {
+                // Edit existing activity
+                const activity = childData.activities.find(a => a.id === editingActivityId);
+                if (activity) {
+                    activity.name = name;
+                    activity.points = points;
+                    activity.category = category;
                 }
+            } else {
+                // Add new activity
+                const newActivity = {
+                    id: 'custom_' + Date.now(),
+                    name: name,
+                    points: points,
+                    category: category,
+                    count: 0
+                };
+                childData.activities.push(newActivity);
             }
-            
-            if (currentCategory && activityIndex !== -1) {
-                const activity = data.customActivities[currentCategory][activityIndex];
-                
-                // Se mudou de categoria, mover a atividade
-                if (currentCategory !== newCategory) {
-                    // Remover da categoria atual
-                    data.customActivities[currentCategory].splice(activityIndex, 1);
-                    // Reordenar categoria atual
-                    data.customActivities[currentCategory].forEach((act, idx) => {
-                        act.order = idx;
-                    });
-                    
-                    // Adicionar na nova categoria
-                    const newOrder = data.customActivities[newCategory].length;
-                    data.customActivities[newCategory].push({
-                        id: activity.id,
-                        name: newName,
-                        basePoints: newBasePoints,
-                        order: newOrder
-                    });
-                } else {
-                    // Apenas atualizar na mesma categoria
-                    activity.name = newName;
-                    activity.basePoints = newBasePoints;
-                }
-                
-                saveData();
-                renderActivities();
-                closeModal('editActivityModal');
-                showNotification('Atividade atualizada com sucesso!');
-            }
-        }
-
-        function confirmDeleteActivity(activityId, category) {
-            const activity = data.customActivities[category].find(a => a.id === activityId);
-            if (!activity) return;
-            
-            if (confirm(`Tem certeza que deseja excluir a atividade "${activity.name}"?`)) {
-                deleteActivityById(activityId, category);
-            }
-        }
-
-        function deleteActivity() {
-            if (!editingActivityId) return;
-            
-            // Encontrar e remover a atividade
-            for (const [category, activities] of Object.entries(data.customActivities)) {
-                const index = activities.findIndex(a => a.id === editingActivityId);
-                if (index !== -1) {
-                    const activity = activities[index];
-                    if (confirm(`Tem certeza que deseja excluir a atividade "${activity.name}"?`)) {
-                        activities.splice(index, 1);
-                        // Reordenar
-                        activities.forEach((act, idx) => {
-                            act.order = idx;
-                        });
-                        saveData();
-                        renderActivities();
-                        closeModal('editActivityModal');
-                        showNotification('Atividade excluída com sucesso!');
-                    }
-                    break;
-                }
-            }
-        }
-
-        function deleteActivityById(activityId, category) {
-            const index = data.customActivities[category].findIndex(a => a.id === activityId);
-            if (index !== -1) {
-                data.customActivities[category].splice(index, 1);
-                // Reordenar
-                data.customActivities[category].forEach((act, idx) => {
-                    act.order = idx;
-                });
-                saveData();
-                renderActivities();
-                showNotification('Atividade excluída com sucesso!');
-            }
-        }
-
-        function addActivity(activityName, points) {
-            const childData = data[currentChild];
-            
-            // Verificar se há data de início definida
-            if (!childData.startDate) {
-                alert('Por favor, defina primeiro o saldo inicial e a data de início no Dashboard!');
-                return;
-            }
-            
-            // Verificar se a atividade é posterior à data de início
-            const today = new Date();
-            const startDate = new Date(childData.startDate);
-            
-            if (today < startDate) {
-                alert('Não é possível registrar atividades antes da data de início definida!');
-                return;
-            }
-            
-            const activity = {
-                id: Date.now(),
-                name: activityName,
-                points: points,
-                date: new Date().toISOString(),
-                dateString: new Date().toLocaleDateString('pt-BR'),
-                timeString: new Date().toLocaleTimeString('pt-BR')
-            };
-
-            childData.activities.push(activity);
-            childData.totalPoints += points;
             
             saveData();
             updateDisplay();
-            
-            if (currentTab === 'activities') {
-                renderTodayActivities();
-            }
-            
-            // Feedback visual
-            showNotification(`${activityName}: ${points > 0 ? '+' : ''}${points} pontos para ${currentChild === 'luiza' ? 'Luiza' : 'Miguel'}!`);
+            closeModal();
+            showNotification(editingActivityId ? 'Atividade editada!' : 'Atividade adicionada!');
         }
-
-        function renderTodayActivities() {
-            const container = document.getElementById('todayActivities');
-            const today = new Date().toDateString();
-            
-            const todayActivities = data[currentChild].activities.filter(activity => {
-                const activityDate = new Date(activity.date).toDateString();
-                return activityDate === today;
-            }).reverse(); // Mais recentes primeiro
-            
-            if (todayActivities.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhuma atividade registrada hoje</p>';
-                return;
-            }
-
-            container.innerHTML = todayActivities.map(activity => `
-                <div class="history-item today">
-                    <div class="history-content">
-                        <div class="history-activity">${activity.name}</div>
-                        <div class="history-datetime">${activity.timeString}</div>
-                    </div>
-                    <div class="history-points ${activity.points > 0 ? 'positive' : 'negative'}">
-                        ${activity.points > 0 ? '+' : ''}${activity.points}
-                    </div>
-                    <div class="history-actions">
-                        <button class="history-delete" onclick="deleteActivityRecord(${activity.id})">🗑️</button>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function deleteActivityRecord(activityId) {
-            const activityIndex = data[currentChild].activities.findIndex(a => a.id === activityId);
-            if (activityIndex !== -1) {
-                const activity = data[currentChild].activities[activityIndex];
-                const today = new Date().toDateString();
-                const activityDate = new Date(activity.date).toDateString();
-                
-                // Só permitir exclusão de atividades do dia atual
-                if (activityDate !== today) {
-                    alert('Só é possível excluir atividades do dia atual!');
-                    return;
-                }
-                
-                if (confirm(`Tem certeza que deseja excluir "${activity.name}"?`)) {
-                    // Remover pontos
-                    data[currentChild].totalPoints -= activity.points;
-                    // Remover atividade
-                    data[currentChild].activities.splice(activityIndex, 1);
-                    
+        
+        // Delete activity
+        function deleteActivity(activityId) {
+            if (confirm('Tem certeza que deseja excluir esta atividade?')) {
+                const childData = appData[currentChild];
+                const index = childData.activities.findIndex(a => a.id === activityId);
+                if (index > -1) {
+                    childData.activities.splice(index, 1);
                     saveData();
                     updateDisplay();
-                    renderTodayActivities();
-                    showNotification('Atividade excluída com sucesso!');
+                    showNotification('Atividade excluída!');
                 }
             }
         }
-
-        function addExpense() {
-            const desc = document.getElementById('expenseDesc').value.trim();
-            const amount = parseFloat(document.getElementById('expenseAmount').value);
-            const date = document.getElementById('expenseDate').value;
-
-            if (!desc || !amount || !date) {
-                alert('Preencha todos os campos!');
-                return;
+        
+        // Remove today activity
+        function removeTodayActivity(activityId, date) {
+            const childData = appData[currentChild];
+            const index = childData.todayActivities.findIndex(a => a.id === activityId && a.date === date);
+            if (index > -1) {
+                childData.todayActivities.splice(index, 1);
+                saveData();
+                updateDisplay();
+                showNotification('Atividade do dia removida!');
             }
-
-            const expense = {
-                id: Date.now(),
-                description: desc,
-                amount: amount,
-                date: date,
-                dateString: new Date(date).toLocaleDateString('pt-BR')
-            };
-
-            data[currentChild].expenses.push(expense);
-            
-            // Deduzir pontos equivalentes (R$ 0,01 por ponto)
-            const pointsToDeduct = Math.round(amount * 100);
-            data[currentChild].totalPoints = Math.max(0, data[currentChild].totalPoints - pointsToDeduct);
-
-            saveData();
-            updateDisplay();
-
-            // Limpar formulário
-            document.getElementById('expenseDesc').value = '';
-            document.getElementById('expenseAmount').value = '';
-            
-            showNotification(`Gasto registrado: ${desc} - R$ ${amount.toFixed(2)}`);
         }
-
-        function updateDisplay() {
-            const childData = data[currentChild];
-            
-            // Atualizar estatísticas
-            document.getElementById('totalPoints').textContent = childData.totalPoints;
-            document.getElementById('availableBalance').textContent = `R$ ${(childData.totalPoints * 0.01).toFixed(2)}`;
-            
-            // Pontos deste mês
-            const thisMonth = new Date().getMonth();
-            const thisYear = new Date().getFullYear();
-            const monthlyPoints = childData.activities
-                .filter(activity => {
-                    const activityDate = new Date(activity.date);
-                    return activityDate.getMonth() === thisMonth && activityDate.getFullYear() === thisYear;
-                })
-                .reduce((sum, activity) => sum + activity.points, 0);
-            document.getElementById('monthlyPoints').textContent = monthlyPoints;
-            
-            // Gastos deste mês
-            const monthlyExpenses = childData.expenses
-                .filter(expense => {
-                    const expenseDate = new Date(expense.date);
-                    return expenseDate.getMonth() === thisMonth && expenseDate.getFullYear() === thisYear;
-                })
-                .reduce((sum, expense) => sum + expense.amount, 0);
-            document.getElementById('monthlyExpenses').textContent = `R$ ${monthlyExpenses.toFixed(2)}`;
-
-            // Atualizar histórico de gastos
-            updateExpenseHistory();
-            
-            // Atualizar relatórios
-            updateReports();
+        
+        // Close modal
+        function closeModal() {
+            document.getElementById('activity-modal').style.display = 'none';
         }
-
-        function updateExpenseHistory() {
-            const historyContainer = document.getElementById('expenseHistory');
-            const expenses = data[currentChild].expenses.slice().reverse();
-            
-            if (expenses.length === 0) {
-                historyContainer.innerHTML = '<p style="text-align: center; color: #666; padding: 20px;">Nenhum gasto registrado</p>';
-                return;
-            }
-
-            historyContainer.innerHTML = expenses.map(expense => `
-                <div class="expense-item">
-                    <div class="expense-desc">${expense.description}</div>
-                    <div class="expense-date">${expense.dateString}</div>
-                    <div class="expense-amount">R$ ${expense.amount.toFixed(2)}</div>
-                </div>
-            `).join('');
-        }
-
-        function updateReports() {
-            const childData = data[currentChild];
-            
-            // Média diária dos últimos 7 dias
-            const last7Days = childData.activities
-                .filter(activity => {
-                    const activityDate = new Date(activity.date);
-                    const weekAgo = new Date();
-                    weekAgo.setDate(weekAgo.getDate() - 7);
-                    return activityDate >= weekAgo;
-                })
-                .reduce((sum, activity) => sum + activity.points, 0);
-            document.getElementById('dailyAverage').textContent = Math.round(last7Days / 7);
-            
-            // Total ganho e gasto
-            const totalEarned = childData.activities
-                .filter(activity => activity.points > 0)
-                .reduce((sum, activity) => sum + activity.points, 0) * 0.01;
-            document.getElementById('totalEarned').textContent = `R$ ${totalEarned.toFixed(2)}`;
-            
-            const totalSpent = childData.expenses.reduce((sum, expense) => sum + expense.amount, 0);
-            document.getElementById('totalSpent').textContent = `R$ ${totalSpent.toFixed(2)}`;
-        }
-
-        function updateDetailedReports() {
-            const childData = data[currentChild];
-            const now = new Date();
-            
-            // Último dia
-            const yesterday = new Date(now);
-            yesterday.setDate(yesterday.getDate() - 1);
-            const lastDayActivities = childData.activities.filter(activity => {
-                const activityDate = new Date(activity.date);
-                return activityDate.toDateString() === yesterday.toDateString();
-            });
-            
-            const lastDayPositive = lastDayActivities.filter(a => a.points > 0).reduce((sum, a) => sum + a.points, 0);
-            const lastDayNegative = Math.abs(lastDayActivities.filter(a => a.points < 0).reduce((sum, a) => sum + a.points, 0));
-            const lastDayNet = lastDayPositive - lastDayNegative;
-            const lastDayPattern = getPattern(lastDayNet);
-            
-            document.getElementById('lastDayPositive').textContent = lastDayPositive;
-            document.getElementById('lastDayNegative').textContent = lastDayNegative;
-            document.getElementById('lastDayNet').textContent = lastDayNet;
-            document.getElementById('lastDayNet').className = `report-value ${lastDayNet >= 0 ? 'positive' : 'negative'}`;
-            document.getElementById('lastDayPattern').textContent = lastDayPattern;
-            
-            // Última semana
-            const weekAgo = new Date(now);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            const lastWeekActivities = childData.activities.filter(activity => {
-                const activityDate = new Date(activity.date);
-                return activityDate >= weekAgo && activityDate < now;
-            });
-            
-            const lastWeekPositive = lastWeekActivities.filter(a => a.points > 0).reduce((sum, a) => sum + a.points, 0);
-            const lastWeekNegative = Math.abs(lastWeekActivities.filter(a => a.points < 0).reduce((sum, a) => sum + a.points, 0));
-            const lastWeekNet = lastWeekPositive - lastWeekNegative;
-            const lastWeekPattern = getPattern(lastWeekNet);
-            
-            document.getElementById('lastWeekPositive').textContent = lastWeekPositive;
-            document.getElementById('lastWeekNegative').textContent = lastWeekNegative;
-            document.getElementById('lastWeekNet').textContent = lastWeekNet;
-            document.getElementById('lastWeekNet').className = `report-value ${lastWeekNet >= 0 ? 'positive' : 'negative'}`;
-            document.getElementById('lastWeekPattern').textContent = lastWeekPattern;
-            
-            // Último mês
-            const monthAgo = new Date(now);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            const lastMonthActivities = childData.activities.filter(activity => {
-                const activityDate = new Date(activity.date);
-                return activityDate >= monthAgo && activityDate < now;
-            });
-            
-            const lastMonthPositive = lastMonthActivities.filter(a => a.points > 0).reduce((sum, a) => sum + a.points, 0);
-            const lastMonthNegative = Math.abs(lastMonthActivities.filter(a => a.points < 0).reduce((sum, a) => sum + a.points, 0));
-            const lastMonthNet = lastMonthPositive - lastMonthNegative;
-            const lastMonthPattern = getPattern(lastMonthNet);
-            
-            document.getElementById('lastMonthPositive').textContent = lastMonthPositive;
-            document.getElementById('lastMonthNegative').textContent = lastMonthNegative;
-            document.getElementById('lastMonthNet').textContent = lastMonthNet;
-            document.getElementById('lastMonthNet').className = `report-value ${lastMonthNet >= 0 ? 'positive' : 'negative'}`;
-            document.getElementById('lastMonthPattern').textContent = lastMonthPattern;
-        }
-
-        function getPattern(netPoints) {
-            if (netPoints >= 50) return 'Excelente';
-            if (netPoints >= 20) return 'Muito Bom';
-            if (netPoints >= 5) return 'Bom';
-            if (netPoints >= 0) return 'Regular';
-            if (netPoints >= -10) return 'Precisa Melhorar';
-            return 'Crítico';
-        }
-
-        function openModal(modalId) {
-            document.getElementById(modalId).style.display = 'block';
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).style.display = 'none';
-            editingActivityId = null;
-        }
-
-        function addNewActivity() {
-            const name = document.getElementById('newActivityName').value.trim();
-            const category = document.getElementById('newActivityCategory').value;
-            const basePoints = parseFloat(document.getElementById('newActivityPoints').value);
-
-            if (!name || !basePoints) {
-                alert('Preencha todos os campos!');
-                return;
-            }
-
-            // Gerar novo ID único
-            const newId = Math.max(...Object.values(data.customActivities).flat().map(a => a.id), 0) + 1;
-            const newOrder = data.customActivities[category].length;
-            
-            const newActivity = {
-                id: newId,
-                name: name,
-                basePoints: basePoints,
-                order: newOrder
-            };
-
-            data.customActivities[category].push(newActivity);
-            saveData();
-            renderActivities();
-
-            // Limpar formulário e fechar modal
-            document.getElementById('newActivityName').value = '';
-            document.getElementById('newActivityPoints').value = '';
-            closeModal('addActivityModal');
-            
-            showNotification(`Nova atividade "${name}" adicionada!`);
-        }
-
+        
+        // Export data
         function exportData() {
-            const dataStr = JSON.stringify(data, null, 2);
-            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const dataStr = JSON.stringify(appData, null, 2);
+            const dataBlob = new Blob([dataStr], { type: 'application/json' });
             const url = URL.createObjectURL(dataBlob);
             const link = document.createElement('a');
             link.href = url;
             link.download = 'sistema-pontos-backup.json';
             link.click();
             URL.revokeObjectURL(url);
-            
             showNotification('Dados exportados com sucesso!');
         }
-
+        
+        // Import data
         function importData() {
-            const input = document.createElement('input');
-            input.type = 'file';
-            input.accept = '.json';
-            input.onchange = function(e) {
-                const file = e.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = function(e) {
-                        try {
-                            const importedData = JSON.parse(e.target.result);
-                            data = importedData;
-                            saveData();
-                            updateMultiplierInputs();
-                            renderActivities();
-                            updateDisplay();
-                            updateBalanceInfo();
-                            showNotification('Dados importados com sucesso!');
-                        } catch (error) {
-                            alert('Erro ao importar dados. Verifique o arquivo.');
-                        }
-                    };
-                    reader.readAsText(file);
+            document.getElementById('import-file').click();
+        }
+        
+        function handleImport(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const importedData = JSON.parse(e.target.result);
+                    appData = { ...defaultData, ...importedData };
+                    saveData();
+                    updateDisplay();
+                    showNotification('Dados importados com sucesso!');
+                } catch (error) {
+                    showNotification('Erro ao importar dados!', 'error');
                 }
             };
-            input.click();
+            reader.readAsText(file);
         }
-
-        function resetData() {
-            if (confirm('Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.')) {
-                data = {
-                    luiza: { activities: [], expenses: [], totalPoints: 0, initialBalance: 0, startDate: null },
-                    miguel: { activities: [], expenses: [], totalPoints: 0, initialBalance: 0, startDate: null },
-                    multipliers: { positive: 1, special: 100, negative: 1, grave: 100 },
-                    customActivities: {
-                        positive: [
-                            { id: 1, name: 'Arrumar a cama', basePoints: 1, order: 0 },
-                            { id: 2, name: 'Escovar os dentes', basePoints: 1, order: 1 },
-                            { id: 3, name: 'Guardar brinquedos', basePoints: 1, order: 2 },
-                            { id: 4, name: 'Ajudar nas tarefas', basePoints: 1, order: 3 }
-                        ],
-                        special: [
-                            { id: 5, name: 'Ler um livro completo', basePoints: 1, order: 0 },
-                            { id: 6, name: 'Fazer lição sem ajuda', basePoints: 0.5, order: 1 },
-                            { id: 7, name: 'Comer frutas/verduras', basePoints: 0.3, order: 2 },
-                            { id: 8, name: 'Ser gentil com irmão', basePoints: 0.25, order: 3 }
-                        ],
-                        negative: [
-                            { id: 9, name: 'Não escovar os dentes', basePoints: 1, order: 0 },
-                            { id: 10, name: 'Deixar quarto bagunçado', basePoints: 1, order: 1 },
-                            { id: 11, name: 'Não fazer lição', basePoints: 2, order: 2 },
-                            { id: 12, name: 'Desobedecer', basePoints: 3, order: 3 }
-                        ],
-                        grave: [
-                            { id: 13, name: 'Bater no irmão', basePoints: 1, order: 0 },
-                            { id: 14, name: 'Mentir', basePoints: 0.5, order: 1 },
-                            { id: 15, name: 'Quebrar algo de propósito', basePoints: 0.75, order: 2 },
-                            { id: 16, name: 'Gritar/fazer birra', basePoints: 0.3, order: 3 }
-                        ]
-                    }
-                };
-                saveData();
-                updateMultiplierInputs();
-                renderActivities();
-                updateDisplay();
-                updateBalanceInfo();
-                showNotification('Dados resetados com sucesso!');
-            }
-        }
-
-        function showNotification(message) {
-            // Criar notificação temporária
-            const notification = document.createElement('div');
-            notification.style.cssText = `
-                position: fixed;
-                top: 20px;
-                right: 20px;
-                background: #10b981;
-                color: white;
-                padding: 15px 20px;
-                border-radius: 8px;
-                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-                z-index: 1001;
-                font-weight: 600;
-                max-width: 300px;
-            `;
-            notification.textContent = message;
-            document.body.appendChild(notification);
+        
+        // Drag and drop functionality
+        function enableDragAndDrop() {
+            const activityItems = document.querySelectorAll('.activity-item');
             
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
+            activityItems.forEach(item => {
+                item.draggable = true;
+                
+                item.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                
+                item.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    draggedElement = null;
+                });
+                
+                item.addEventListener('dragover', function(e) {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+                
+                item.addEventListener('drop', function(e) {
+                    e.preventDefault();
+                    
+                    if (draggedElement && draggedElement !== this) {
+                        const container = this.parentNode;
+                        const draggedCategory = draggedElement.dataset.category;
+                        const targetCategory = this.dataset.category;
+                        
+                        if (draggedCategory === targetCategory) {
+                            // Reorder within same category
+                            const draggedIndex = Array.from(container.children).indexOf(draggedElement);
+                            const targetIndex = Array.from(container.children).indexOf(this);
+                            
+                            if (draggedIndex < targetIndex) {
+                                container.insertBefore(draggedElement, this.nextSibling);
+                            } else {
+                                container.insertBefore(draggedElement, this);
+                            }
+                            
+                            // Update data order
+                            const childData = appData[currentChild];
+                            const categoryActivities = childData.activities.filter(a => a.category === draggedCategory);
+                            const draggedActivity = categoryActivities[draggedIndex];
+                            categoryActivities.splice(draggedIndex, 1);
+                            categoryActivities.splice(targetIndex, 0, draggedActivity);
+                            
+                            // Update activities array
+                            childData.activities = childData.activities.filter(a => a.category !== draggedCategory);
+                            childData.activities.push(...categoryActivities);
+                            
+                            saveData();
+                            showNotification('Ordem das atividades atualizada!');
+                        }
+                    }
+                });
+            });
         }
-
-        // Fechar modais clicando fora
-        window.onclick = function(event) {
-            if (event.target.classList.contains('modal')) {
-                event.target.style.display = 'none';
-                editingActivityId = null;
+        
+        // Calculate behavior pattern
+        function calculatePattern(points) {
+            if (points >= 50) return 'Excelente';
+            if (points >= 20) return 'Muito Bom';
+            if (points >= 5) return 'Bom';
+            if (points >= 0) return 'Regular';
+            if (points >= -10) return 'Precisa Melhorar';
+            return 'Crítico';
+        }
+        
+        // Update display
+        function updateDisplay() {
+            const childData = appData[currentChild];
+            
+            // Update saldo info
+            if (childData.saldoInicial && childData.dataInicio) {
+                document.getElementById('info-saldo').textContent = `${childData.saldoInicial} pontos`;
+                document.getElementById('info-data').textContent = childData.dataInicio;
+                
+                const startDate = new Date(childData.dataInicio);
+                const today = new Date();
+                const diffTime = Math.abs(today - startDate);
+                const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                document.getElementById('info-dias').textContent = `${diffDays} dias`;
             }
+            
+            // Update multiplier inputs
+            document.getElementById('mult-positive').value = childData.multipliers.positive;
+            document.getElementById('mult-special').value = childData.multipliers.special;
+            document.getElementById('mult-negative').value = childData.multipliers.negative;
+            document.getElementById('mult-grave').value = childData.multipliers.grave;
+            
+            // Update stats
+            const totalPoints = calculateTotalPoints(currentChild);
+            document.getElementById('total-points').textContent = totalPoints;
+            document.getElementById('available-balance').textContent = `R$ ${(totalPoints * 0.01).toFixed(2)}`;
+            
+            // Update categories
+            updateCategories();
+            
+            // Update today's activities
+            updateTodayActivities();
+            
+            // Update reports
+            updateReports();
+            
+            // Enable drag and drop
+            setTimeout(enableDragAndDrop, 100);
         }
+        
+        // Update categories display
+        function updateCategories() {
+            const container = document.getElementById('categories-container');
+            const childData = appData[currentChild];
+            
+            const categories = {
+                positive: { title: '✅ Positivos', class: 'positive', multiplier: childData.multipliers.positive },
+                special: { title: '⭐ Especiais', class: 'special', multiplier: childData.multipliers.special },
+                negative: { title: '⚠️ Negativos', class: 'negative', multiplier: childData.multipliers.negative },
+                grave: { title: '🚨 Graves', class: 'grave', multiplier: childData.multipliers.grave }
+            };
+            
+            container.innerHTML = '';
+            
+            Object.keys(categories).forEach(categoryKey => {
+                const category = categories[categoryKey];
+                const activities = childData.activities.filter(a => a.category === categoryKey);
+                
+                const categoryDiv = document.createElement('div');
+                categoryDiv.className = `category-card ${category.class}`;
+                
+                categoryDiv.innerHTML = `
+                    <div class="category-header">
+                        <div class="category-title">${category.title}</div>
+                        <div class="category-multiplier">x${category.multiplier}</div>
+                    </div>
+                    <div class="activity-list">
+                        ${activities.map(activity => {
+                            const todayCount = childData.todayActivities
+                                .filter(ta => ta.id === activity.id && ta.date === new Date().toISOString().split('T')[0])
+                                .reduce((sum, ta) => sum + ta.count, 0);
+                            
+                            const finalPoints = activity.points * category.multiplier;
+                            const sign = categoryKey === 'negative' || categoryKey === 'grave' ? '-' : '+';
+                            
+                            return `
+                                <div class="activity-item" data-category="${categoryKey}" data-id="${activity.id}">
+                                    <div class="drag-handle">⋮⋮</div>
+                                    <div class="activity-content">
+                                        <div class="activity-name">${activity.name}</div>
+                                        <div class="activity-controls">
+                                            <div class="activity-counter">
+                                                <button class="counter-btn" onclick="adjustActivityCount('${activity.id}', -1)">-</button>
+                                                <div class="counter-display">${todayCount}</div>
+                                                <button class="counter-btn" onclick="adjustActivityCount('${activity.id}', 1)">+</button>
+                                            </div>
+                                            <div class="activity-actions">
+                                                <button class="edit-btn" onclick="showEditActivityModal('${activity.id}')">✏️</button>
+                                                <button class="delete-btn" onclick="deleteActivity('${activity.id}')">🗑️</button>
+                                            </div>
+                                            <div class="activity-points">${sign}${finalPoints}</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
+                `;
+                
+                container.appendChild(categoryDiv);
+            });
+        }
+        
+        // Update today's activities
+        function updateTodayActivities() {
+            const container = document.getElementById('today-activities');
+            const childData = appData[currentChild];
+            const today = new Date().toISOString().split('T')[0];
+            const todayActivities = childData.todayActivities.filter(a => a.date === today);
+            
+            if (todayActivities.length === 0) {
+                container.innerHTML = '<p>Nenhuma atividade registrada hoje</p>';
+                return;
+            }
+            
+            container.innerHTML = todayActivities.map(activity => {
+                const multiplier = childData.multipliers[activity.category] || 1;
+                const finalPoints = activity.points * multiplier * activity.count;
+                const sign = activity.category === 'negative' || activity.category === 'grave' ? '-' : '+';
+                
+                return `
+                    <div class="today-activity">
+                        <div>
+                            <strong>${activity.name}</strong> (${activity.count}x)
+                            <div class="activity-time">${activity.time}</div>
+                        </div>
+                        <div>
+                            <span>${sign}${finalPoints} pontos</span>
+                            <button class="remove-today-btn" onclick="removeTodayActivity('${activity.id}', '${activity.date}')">🗑️</button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        // Update reports
+        function updateReports() {
+            const childData = appData[currentChild];
+            const now = new Date();
+            
+            // Calculate periods
+            const today = now.toISOString().split('T')[0];
+            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            
+            // Day report
+            const dayActivities = childData.todayActivities.filter(a => a.date === today);
+            const dayPositive = dayActivities.filter(a => a.category === 'positive' || a.category === 'special')
+                .reduce((sum, a) => sum + (a.points * childData.multipliers[a.category] * a.count), 0);
+            const dayNegative = dayActivities.filter(a => a.category === 'negative' || a.category === 'grave')
+                .reduce((sum, a) => sum + (a.points * childData.multipliers[a.category] * a.count), 0);
+            const dayNet = dayPositive - dayNegative;
+            
+            document.getElementById('day-positive').textContent = dayPositive;
+            document.getElementById('day-negative').textContent = dayNegative;
+            document.getElementById('day-net').textContent = dayNet;
+            document.getElementById('day-pattern').textContent = calculatePattern(dayNet);
+            
+            // Week report (simplified - same as day for now)
+            document.getElementById('week-positive').textContent = dayPositive;
+            document.getElementById('week-negative').textContent = dayNegative;
+            document.getElementById('week-net').textContent = dayNet;
+            document.getElementById('week-pattern').textContent = calculatePattern(dayNet);
+            
+            // Month report (simplified - same as day for now)
+            document.getElementById('month-positive').textContent = dayPositive;
+            document.getElementById('month-negative').textContent = dayNegative;
+            document.getElementById('month-net').textContent = dayNet;
+            document.getElementById('month-pattern').textContent = calculatePattern(dayNet);
+            
+            // Update other stats
+            document.getElementById('daily-average').textContent = Math.round(dayNet / 7);
+            document.getElementById('best-day').textContent = dayNet > 0 ? 'Hoje' : '-';
+            document.getElementById('total-earned').textContent = `R$ ${(dayPositive * 0.01).toFixed(2)}`;
+            document.getElementById('total-spent').textContent = `R$ ${(dayNegative * 0.01).toFixed(2)}`;
+            
+            // Update month stats in dashboard
+            document.getElementById('month-points').textContent = dayNet;
+            document.getElementById('month-expenses').textContent = `R$ ${(dayNegative * 0.01).toFixed(2)}`;
+        }
+        
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', function() {
+            // Child selector
+            document.querySelectorAll('.child-tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchChild(this.dataset.child);
+                });
+            });
+            
+            // Tab selector
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', function() {
+                    switchTab(this.dataset.tab);
+                });
+            });
+            
+            // Modal close on outside click
+            document.getElementById('activity-modal').addEventListener('click', function(e) {
+                if (e.target === this) {
+                    closeModal();
+                }
+            });
+            
+            // Initialize display
+            updateDisplay();
+            
+            // Update datetime every second
+            setInterval(updateDateTime, 1000);
+            updateDateTime();
+        });
     </script>
 </body>
 </html>
