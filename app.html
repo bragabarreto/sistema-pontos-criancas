@@ -767,6 +767,9 @@
                 <button class="btn btn-success" onclick="exportData()">Exportar Dados</button>
                 <button class="btn btn-primary" onclick="importData()">Importar Dados</button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImport(event)">
+                <br><br>
+                <button class="btn btn-primary" onclick="debugStorage()">Debug Storage</button>
+                <button class="btn btn-primary" onclick="clearAllData()">Limpar Todos os Dados</button>
             </div>
         </div>
     </div>
@@ -837,7 +840,10 @@
     </div>
     
     <script>
-        console.log('🚀 INICIANDO SISTEMA...');
+        console.log('🚀 INICIANDO SISTEMA COM SALVAMENTO ROBUSTO...');
+        
+        // STORAGE KEY ÚNICO E ESPECÍFICO
+        const STORAGE_KEY = 'kidsPointsSystem_v2_persistent';
         
         // Global variables
         let currentChild = 'luiza';
@@ -891,35 +897,110 @@
         
         console.log('✅ Dados iniciais criados:', appData);
         
-        // ROBUST SAVE/LOAD FUNCTIONS
+        // SUPER ROBUST SAVE/LOAD FUNCTIONS
         function saveData() {
             try {
-                const dataToSave = JSON.stringify(appData);
-                localStorage.setItem('kidsPointsSystem', dataToSave);
+                console.log('💾 SALVANDO DADOS...', appData);
                 
-                // Verificação dupla
-                const saved = localStorage.getItem('kidsPointsSystem');
-                if (saved) {
-                    console.log('✅ DADOS SALVOS:', JSON.parse(saved));
-                    showNotification('Dados salvos!');
-                    return true;
-                } else {
-                    throw new Error('Falha na verificação');
+                // Verificar se localStorage está disponível
+                if (typeof Storage === 'undefined') {
+                    throw new Error('localStorage não disponível');
                 }
+                
+                // Preparar dados para salvamento
+                const dataToSave = {
+                    version: '2.0',
+                    timestamp: new Date().toISOString(),
+                    data: appData
+                };
+                
+                const jsonString = JSON.stringify(dataToSave);
+                
+                // Salvar com múltiplas tentativas
+                let attempts = 0;
+                const maxAttempts = 3;
+                
+                while (attempts < maxAttempts) {
+                    try {
+                        localStorage.setItem(STORAGE_KEY, jsonString);
+                        
+                        // Verificação TRIPLA
+                        const saved = localStorage.getItem(STORAGE_KEY);
+                        if (saved && saved === jsonString) {
+                            console.log('✅ DADOS SALVOS COM SUCESSO!');
+                            showNotification('Dados salvos com sucesso!');
+                            return true;
+                        } else {
+                            throw new Error(`Verificação falhou na tentativa ${attempts + 1}`);
+                        }
+                    } catch (e) {
+                        attempts++;
+                        console.warn(`⚠️ Tentativa ${attempts} falhou:`, e);
+                        if (attempts >= maxAttempts) {
+                            throw e;
+                        }
+                        // Aguardar antes da próxima tentativa
+                        await new Promise(resolve => setTimeout(resolve, 100));
+                    }
+                }
+                
             } catch (e) {
-                console.error('❌ ERRO AO SALVAR:', e);
-                showNotification('ERRO: Dados não salvos!', 'error');
+                console.error('❌ ERRO CRÍTICO AO SALVAR:', e);
+                showNotification('ERRO: Dados não foram salvos!', 'error');
+                
+                // Tentar salvar em backup
+                try {
+                    localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(appData));
+                    console.log('💾 Backup salvo');
+                } catch (backupError) {
+                    console.error('❌ Falha no backup:', backupError);
+                }
+                
                 return false;
             }
         }
         
         function loadData() {
             try {
-                const saved = localStorage.getItem('kidsPointsSystem');
+                console.log('📂 CARREGANDO DADOS...');
+                
+                // Verificar se localStorage está disponível
+                if (typeof Storage === 'undefined') {
+                    console.warn('⚠️ localStorage não disponível');
+                    return false;
+                }
+                
+                // Tentar carregar dados principais
+                let saved = localStorage.getItem(STORAGE_KEY);
+                
+                // Se não encontrar, tentar backup
+                if (!saved) {
+                    console.log('🔄 Tentando carregar backup...');
+                    saved = localStorage.getItem(STORAGE_KEY + '_backup');
+                }
+                
                 if (saved && saved !== 'null' && saved !== 'undefined') {
-                    const loadedData = JSON.parse(saved);
+                    let loadedData;
                     
-                    // Merge SEGURO com dados padrão
+                    try {
+                        const parsedData = JSON.parse(saved);
+                        
+                        // Verificar se é o novo formato com versão
+                        if (parsedData.version && parsedData.data) {
+                            loadedData = parsedData.data;
+                            console.log('📦 Carregando formato v2.0');
+                        } else {
+                            // Formato antigo
+                            loadedData = parsedData;
+                            console.log('📦 Carregando formato legado');
+                        }
+                        
+                    } catch (parseError) {
+                        console.error('❌ Erro ao fazer parse:', parseError);
+                        throw parseError;
+                    }
+                    
+                    // Merge SUPER SEGURO com dados padrão
                     if (loadedData.luiza) {
                         appData.luiza = {
                             saldoInicial: loadedData.luiza.saldoInicial || 0,
@@ -928,6 +1009,13 @@
                             todayActivities: loadedData.luiza.todayActivities || [],
                             multipliers: loadedData.luiza.multipliers || { positive: 1, special: 50, negative: 1, grave: 100 }
                         };
+                        
+                        // Garantir que todas as categorias existem
+                        Object.keys(defaultActivities).forEach(category => {
+                            if (!appData.luiza.activities[category]) {
+                                appData.luiza.activities[category] = JSON.parse(JSON.stringify(defaultActivities[category]));
+                            }
+                        });
                     }
                     
                     if (loadedData.miguel) {
@@ -938,19 +1026,29 @@
                             todayActivities: loadedData.miguel.todayActivities || [],
                             multipliers: loadedData.miguel.multipliers || { positive: 1, special: 50, negative: 1, grave: 100 }
                         };
+                        
+                        // Garantir que todas as categorias existem
+                        Object.keys(defaultActivities).forEach(category => {
+                            if (!appData.miguel.activities[category]) {
+                                appData.miguel.activities[category] = JSON.parse(JSON.stringify(defaultActivities[category]));
+                            }
+                        });
                     }
                     
-                    console.log('✅ DADOS CARREGADOS:', appData);
-                    showNotification('Dados carregados!');
+                    console.log('✅ DADOS CARREGADOS COM SUCESSO:', appData);
+                    showNotification('Dados carregados com sucesso!');
                     return true;
+                    
                 } else {
-                    console.log('ℹ️ Usando dados padrão');
+                    console.log('ℹ️ Nenhum dado salvo encontrado, usando dados padrão');
                     return false;
                 }
+                
             } catch (e) {
-                console.error('❌ ERRO AO CARREGAR:', e);
-                showNotification('Usando dados padrão', 'error');
-                // Garantir que sempre temos dados padrão
+                console.error('❌ ERRO AO CARREGAR DADOS:', e);
+                showNotification('Erro ao carregar dados, usando padrão', 'error');
+                
+                // Garantir que sempre temos dados padrão funcionais
                 appData = {
                     luiza: {
                         saldoInicial: 0,
@@ -967,15 +1065,57 @@
                         multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
                     }
                 };
+                
                 return false;
             }
         }
         
-        // Force save on every change
-        function forceSave() {
-            const success = saveData();
-            if (!success) {
-                setTimeout(() => saveData(), 1000);
+        // Force save with retry logic
+        async function forceSave() {
+            console.log('🔄 FORÇA SALVAMENTO...');
+            
+            let attempts = 0;
+            const maxAttempts = 5;
+            
+            while (attempts < maxAttempts) {
+                const success = await saveData();
+                if (success) {
+                    return true;
+                }
+                
+                attempts++;
+                console.warn(`⚠️ Tentativa de salvamento ${attempts} falhou`);
+                
+                if (attempts < maxAttempts) {
+                    await new Promise(resolve => setTimeout(resolve, 500 * attempts));
+                }
+            }
+            
+            console.error('❌ FALHA CRÍTICA: Não foi possível salvar após', maxAttempts, 'tentativas');
+            showNotification('ERRO CRÍTICO: Dados não salvos!', 'error');
+            return false;
+        }
+        
+        // Debug functions
+        function debugStorage() {
+            console.log('=== DEBUG STORAGE ===');
+            console.log('localStorage disponível:', typeof Storage !== 'undefined');
+            console.log('Dados atuais:', appData);
+            console.log('Dados no localStorage:', localStorage.getItem(STORAGE_KEY));
+            console.log('Tamanho do localStorage:', JSON.stringify(appData).length, 'caracteres');
+            
+            // Testar salvamento
+            const testResult = saveData();
+            console.log('Teste de salvamento:', testResult);
+            
+            showNotification('Debug executado - veja o console');
+        }
+        
+        function clearAllData() {
+            if (confirm('ATENÇÃO: Isso irá apagar TODOS os dados salvos. Confirma?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                localStorage.removeItem(STORAGE_KEY + '_backup');
+                location.reload();
             }
         }
         
@@ -1051,7 +1191,7 @@
             
             forceSave();
             updateDisplay();
-            showNotification('Saldo inicial definido!');
+            showNotification('Saldo inicial definido e salvo!');
         }
         
         // Calculate total points
@@ -1118,7 +1258,7 @@
             updateDisplay();
             
             const action = change > 0 ? 'adicionada' : 'removida';
-            showNotification(`"${activity.name}" ${action}!`);
+            showNotification(`"${activity.name}" ${action} e salva!`);
         }
         
         // Update multipliers
@@ -1131,7 +1271,7 @@
             
             forceSave();
             updateDisplay();
-            showNotification('Multiplicadores atualizados!');
+            showNotification('Multiplicadores atualizados e salvos!');
         }
         
         // Edit activity functions
@@ -1185,7 +1325,7 @@
                 
                 forceSave();
                 updateDisplay();
-                showNotification('Atividade atualizada!');
+                showNotification('Atividade atualizada e salva!');
             }
             
             closeEditModal();
@@ -1207,7 +1347,7 @@
                 
                 forceSave();
                 updateDisplay();
-                showNotification(`"${activity.name}" excluída!`);
+                showNotification(`"${activity.name}" excluída e salva!`);
             }
         }
         
@@ -1243,7 +1383,7 @@
             
             forceSave();
             updateDisplay();
-            showNotification('Nova atividade adicionada!');
+            showNotification('Nova atividade adicionada e salva!');
             closeAddModal();
         }
         
@@ -1275,7 +1415,7 @@
                     appData = { ...appData, ...importedData };
                     forceSave();
                     updateDisplay();
-                    showNotification('Dados importados!');
+                    showNotification('Dados importados e salvos!');
                 } catch (error) {
                     showNotification('Erro ao importar!', 'error');
                 }
@@ -1470,12 +1610,12 @@
             
             forceSave();
             updateDisplay();
-            showNotification('Atividade removida!');
+            showNotification('Atividade removida e salva!');
         }
         
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 DOM CARREGADO - INICIANDO...');
+            console.log('🚀 DOM CARREGADO - INICIANDO SISTEMA ROBUSTO...');
             
             // Load saved data FIRST
             loadData();
@@ -1507,13 +1647,31 @@
                 }
             });
             
-            // Auto-save on page unload
-            window.addEventListener('beforeunload', function() {
+            // SUPER ROBUST AUTO-SAVE
+            window.addEventListener('beforeunload', function(e) {
+                console.log('🔄 Salvamento antes de fechar...');
                 forceSave();
             });
             
-            // Periodic auto-save
-            setInterval(forceSave, 30000);
+            // Periodic auto-save mais frequente
+            setInterval(() => {
+                console.log('🔄 Auto-save periódico...');
+                forceSave();
+            }, 15000); // A cada 15 segundos
+            
+            // Save on visibility change
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    console.log('🔄 Salvamento por mudança de visibilidade...');
+                    forceSave();
+                }
+            });
+            
+            // Save on page focus/blur
+            window.addEventListener('blur', function() {
+                console.log('🔄 Salvamento por perda de foco...');
+                forceSave();
+            });
             
             // Initialize display
             updateDisplay();
@@ -1522,7 +1680,7 @@
             setInterval(updateDateTime, 1000);
             updateDateTime();
             
-            console.log('✅ SISTEMA INICIADO COM SUCESSO!');
+            console.log('✅ SISTEMA ROBUSTO INICIADO COM SUCESSO!');
         });
     </script>
 </body>
