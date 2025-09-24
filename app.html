@@ -268,17 +268,6 @@
             transform: translateY(-2px);
         }
         
-        .activity-item.dragging {
-            opacity: 0.5;
-            transform: rotate(5deg) scale(1.05);
-            z-index: 1000;
-        }
-        
-        .activity-item.drag-over {
-            border: 2px dashed rgba(255,255,255,0.5);
-            background: rgba(255,255,255,0.3);
-        }
-        
         .drag-handle {
             cursor: move;
             color: rgba(255,255,255,0.8);
@@ -661,16 +650,16 @@
         <div class="datetime-display" id="datetime"></div>
         
         <div class="child-selector">
-            <div class="child-tab active" data-child="luiza">👧 Luiza</div>
-            <div class="child-tab" data-child="miguel">👦 Miguel</div>
+            <div class="child-tab active" onclick="switchChild('luiza')">👧 Luiza</div>
+            <div class="child-tab" onclick="switchChild('miguel')">👦 Miguel</div>
         </div>
         
         <div class="tabs">
-            <div class="tab active" data-tab="dashboard">📊 Dashboard</div>
-            <div class="tab" data-tab="activities">🎯 Atividades</div>
-            <div class="tab" data-tab="expenses">💰 Gastos</div>
-            <div class="tab" data-tab="reports">📈 Relatórios</div>
-            <div class="tab" data-tab="settings">⚙️ Configurações</div>
+            <div class="tab active" onclick="switchTab('dashboard')">📊 Dashboard</div>
+            <div class="tab" onclick="switchTab('activities')">🎯 Atividades</div>
+            <div class="tab" onclick="switchTab('expenses')">💰 Gastos</div>
+            <div class="tab" onclick="switchTab('reports')">📈 Relatórios</div>
+            <div class="tab" onclick="switchTab('settings')">⚙️ Configurações</div>
         </div>
         
         <div class="content">
@@ -840,20 +829,19 @@
     </div>
     
     <script>
-        console.log('🚀 INICIANDO SISTEMA COM SALVAMENTO ROBUSTO...');
+        // SISTEMA SIMPLES E FUNCIONAL
+        console.log('🚀 INICIANDO SISTEMA FUNCIONAL...');
         
-        // STORAGE KEY ÚNICO E ESPECÍFICO
-        const STORAGE_KEY = 'kidsPointsSystem_v2_persistent';
+        // Storage key
+        const STORAGE_KEY = 'kidsPointsSystem_functional';
         
         // Global variables
         let currentChild = 'luiza';
         let currentTab = 'dashboard';
-        let draggedElement = null;
-        let draggedFromCategory = null;
         let editingActivityId = null;
         let editingCategory = null;
         
-        // Data structure with default activities - SEMPRE GARANTIR QUE EXISTAM
+        // Default activities
         const defaultActivities = {
             positive: [
                 { id: 'pos1', name: 'Escovar os dentes', points: 1 },
@@ -862,22 +850,19 @@
             ],
             special: [
                 { id: 'spe1', name: 'Ler um livro completo', points: 1 },
-                { id: 'spe2', name: 'Fazer lição sem ajuda', points: 1 },
-                { id: 'spe3', name: 'Comer frutas/verduras', points: 1 }
+                { id: 'spe2', name: 'Fazer lição sem ajuda', points: 1 }
             ],
             negative: [
                 { id: 'neg1', name: 'Não escovar os dentes', points: 1 },
-                { id: 'neg2', name: 'Deixar quarto bagunçado', points: 1 },
-                { id: 'neg3', name: 'Não fazer lição', points: 2 }
+                { id: 'neg2', name: 'Deixar quarto bagunçado', points: 1 }
             ],
             grave: [
                 { id: 'gra1', name: 'Bater no irmão', points: 1 },
-                { id: 'gra2', name: 'Mentir', points: 1 },
-                { id: 'gra3', name: 'Quebrar algo de propósito', points: 1 }
+                { id: 'gra2', name: 'Mentir', points: 1 }
             ]
         };
         
-        // Initialize app data - SEMPRE COM DADOS PADRÃO
+        // App data
         let appData = {
             luiza: {
                 saldoInicial: 0,
@@ -895,231 +880,57 @@
             }
         };
         
-        console.log('✅ Dados iniciais criados:', appData);
-        
-        // SUPER ROBUST SAVE/LOAD FUNCTIONS
+        // Save data function
         function saveData() {
             try {
-                console.log('💾 SALVANDO DADOS...', appData);
-                
-                // Verificar se localStorage está disponível
-                if (typeof Storage === 'undefined') {
-                    throw new Error('localStorage não disponível');
-                }
-                
-                // Preparar dados para salvamento
-                const dataToSave = {
-                    version: '2.0',
-                    timestamp: new Date().toISOString(),
-                    data: appData
-                };
-                
-                const jsonString = JSON.stringify(dataToSave);
-                
-                // Salvar com múltiplas tentativas
-                let attempts = 0;
-                const maxAttempts = 3;
-                
-                while (attempts < maxAttempts) {
-                    try {
-                        localStorage.setItem(STORAGE_KEY, jsonString);
-                        
-                        // Verificação TRIPLA
-                        const saved = localStorage.getItem(STORAGE_KEY);
-                        if (saved && saved === jsonString) {
-                            console.log('✅ DADOS SALVOS COM SUCESSO!');
-                            showNotification('Dados salvos com sucesso!');
-                            return true;
-                        } else {
-                            throw new Error(`Verificação falhou na tentativa ${attempts + 1}`);
-                        }
-                    } catch (e) {
-                        attempts++;
-                        console.warn(`⚠️ Tentativa ${attempts} falhou:`, e);
-                        if (attempts >= maxAttempts) {
-                            throw e;
-                        }
-                        // Aguardar antes da próxima tentativa
-                        await new Promise(resolve => setTimeout(resolve, 100));
-                    }
-                }
-                
+                const dataToSave = JSON.stringify(appData);
+                localStorage.setItem(STORAGE_KEY, dataToSave);
+                console.log('✅ Dados salvos:', appData);
+                showNotification('Dados salvos com sucesso!');
+                return true;
             } catch (e) {
-                console.error('❌ ERRO CRÍTICO AO SALVAR:', e);
-                showNotification('ERRO: Dados não foram salvos!', 'error');
-                
-                // Tentar salvar em backup
-                try {
-                    localStorage.setItem(STORAGE_KEY + '_backup', JSON.stringify(appData));
-                    console.log('💾 Backup salvo');
-                } catch (backupError) {
-                    console.error('❌ Falha no backup:', backupError);
-                }
-                
+                console.error('❌ Erro ao salvar:', e);
+                showNotification('Erro ao salvar dados!', 'error');
                 return false;
             }
         }
         
+        // Load data function
         function loadData() {
             try {
-                console.log('📂 CARREGANDO DADOS...');
-                
-                // Verificar se localStorage está disponível
-                if (typeof Storage === 'undefined') {
-                    console.warn('⚠️ localStorage não disponível');
-                    return false;
-                }
-                
-                // Tentar carregar dados principais
-                let saved = localStorage.getItem(STORAGE_KEY);
-                
-                // Se não encontrar, tentar backup
-                if (!saved) {
-                    console.log('🔄 Tentando carregar backup...');
-                    saved = localStorage.getItem(STORAGE_KEY + '_backup');
-                }
-                
-                if (saved && saved !== 'null' && saved !== 'undefined') {
-                    let loadedData;
+                const saved = localStorage.getItem(STORAGE_KEY);
+                if (saved) {
+                    const loadedData = JSON.parse(saved);
                     
-                    try {
-                        const parsedData = JSON.parse(saved);
-                        
-                        // Verificar se é o novo formato com versão
-                        if (parsedData.version && parsedData.data) {
-                            loadedData = parsedData.data;
-                            console.log('📦 Carregando formato v2.0');
-                        } else {
-                            // Formato antigo
-                            loadedData = parsedData;
-                            console.log('📦 Carregando formato legado');
-                        }
-                        
-                    } catch (parseError) {
-                        console.error('❌ Erro ao fazer parse:', parseError);
-                        throw parseError;
-                    }
-                    
-                    // Merge SUPER SEGURO com dados padrão
+                    // Merge with default data
                     if (loadedData.luiza) {
                         appData.luiza = {
-                            saldoInicial: loadedData.luiza.saldoInicial || 0,
-                            dataInicio: loadedData.luiza.dataInicio || null,
-                            activities: loadedData.luiza.activities || JSON.parse(JSON.stringify(defaultActivities)),
-                            todayActivities: loadedData.luiza.todayActivities || [],
-                            multipliers: loadedData.luiza.multipliers || { positive: 1, special: 50, negative: 1, grave: 100 }
+                            ...appData.luiza,
+                            ...loadedData.luiza,
+                            activities: loadedData.luiza.activities || appData.luiza.activities
                         };
-                        
-                        // Garantir que todas as categorias existem
-                        Object.keys(defaultActivities).forEach(category => {
-                            if (!appData.luiza.activities[category]) {
-                                appData.luiza.activities[category] = JSON.parse(JSON.stringify(defaultActivities[category]));
-                            }
-                        });
                     }
                     
                     if (loadedData.miguel) {
                         appData.miguel = {
-                            saldoInicial: loadedData.miguel.saldoInicial || 0,
-                            dataInicio: loadedData.miguel.dataInicio || null,
-                            activities: loadedData.miguel.activities || JSON.parse(JSON.stringify(defaultActivities)),
-                            todayActivities: loadedData.miguel.todayActivities || [],
-                            multipliers: loadedData.miguel.multipliers || { positive: 1, special: 50, negative: 1, grave: 100 }
+                            ...appData.miguel,
+                            ...loadedData.miguel,
+                            activities: loadedData.miguel.activities || appData.miguel.activities
                         };
-                        
-                        // Garantir que todas as categorias existem
-                        Object.keys(defaultActivities).forEach(category => {
-                            if (!appData.miguel.activities[category]) {
-                                appData.miguel.activities[category] = JSON.parse(JSON.stringify(defaultActivities[category]));
-                            }
-                        });
                     }
                     
-                    console.log('✅ DADOS CARREGADOS COM SUCESSO:', appData);
+                    console.log('✅ Dados carregados:', appData);
                     showNotification('Dados carregados com sucesso!');
                     return true;
-                    
-                } else {
-                    console.log('ℹ️ Nenhum dado salvo encontrado, usando dados padrão');
-                    return false;
                 }
-                
             } catch (e) {
-                console.error('❌ ERRO AO CARREGAR DADOS:', e);
-                showNotification('Erro ao carregar dados, usando padrão', 'error');
-                
-                // Garantir que sempre temos dados padrão funcionais
-                appData = {
-                    luiza: {
-                        saldoInicial: 0,
-                        dataInicio: null,
-                        activities: JSON.parse(JSON.stringify(defaultActivities)),
-                        todayActivities: [],
-                        multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
-                    },
-                    miguel: {
-                        saldoInicial: 0,
-                        dataInicio: null,
-                        activities: JSON.parse(JSON.stringify(defaultActivities)),
-                        todayActivities: [],
-                        multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
-                    }
-                };
-                
-                return false;
+                console.error('❌ Erro ao carregar:', e);
+                showNotification('Erro ao carregar dados', 'error');
             }
-        }
-        
-        // Force save with retry logic
-        async function forceSave() {
-            console.log('🔄 FORÇA SALVAMENTO...');
-            
-            let attempts = 0;
-            const maxAttempts = 5;
-            
-            while (attempts < maxAttempts) {
-                const success = await saveData();
-                if (success) {
-                    return true;
-                }
-                
-                attempts++;
-                console.warn(`⚠️ Tentativa de salvamento ${attempts} falhou`);
-                
-                if (attempts < maxAttempts) {
-                    await new Promise(resolve => setTimeout(resolve, 500 * attempts));
-                }
-            }
-            
-            console.error('❌ FALHA CRÍTICA: Não foi possível salvar após', maxAttempts, 'tentativas');
-            showNotification('ERRO CRÍTICO: Dados não salvos!', 'error');
             return false;
         }
         
-        // Debug functions
-        function debugStorage() {
-            console.log('=== DEBUG STORAGE ===');
-            console.log('localStorage disponível:', typeof Storage !== 'undefined');
-            console.log('Dados atuais:', appData);
-            console.log('Dados no localStorage:', localStorage.getItem(STORAGE_KEY));
-            console.log('Tamanho do localStorage:', JSON.stringify(appData).length, 'caracteres');
-            
-            // Testar salvamento
-            const testResult = saveData();
-            console.log('Teste de salvamento:', testResult);
-            
-            showNotification('Debug executado - veja o console');
-        }
-        
-        function clearAllData() {
-            if (confirm('ATENÇÃO: Isso irá apagar TODOS os dados salvos. Confirma?')) {
-                localStorage.removeItem(STORAGE_KEY);
-                localStorage.removeItem(STORAGE_KEY + '_backup');
-                location.reload();
-            }
-        }
-        
-        // Update datetime display
+        // Update datetime
         function updateDateTime() {
             const now = new Date();
             const options = {
@@ -1152,7 +963,7 @@
             document.querySelectorAll('.child-tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            document.querySelector(`[data-child="${child}"]`).classList.add('active');
+            document.querySelector(`[onclick="switchChild('${child}')"]`).classList.add('active');
             
             updateDisplay();
         }
@@ -1165,7 +976,7 @@
             document.querySelectorAll('.tab').forEach(t => {
                 t.classList.remove('active');
             });
-            document.querySelector(`[data-tab="${tab}"]`).classList.add('active');
+            document.querySelector(`[onclick="switchTab('${tab}')"]`).classList.add('active');
             
             // Update content
             document.querySelectorAll('.tab-content').forEach(content => {
@@ -1189,9 +1000,9 @@
             appData[currentChild].saldoInicial = saldo;
             appData[currentChild].dataInicio = data;
             
-            forceSave();
+            saveData();
             updateDisplay();
-            showNotification('Saldo inicial definido e salvo!');
+            showNotification('Saldo inicial definido!');
         }
         
         // Calculate total points
@@ -1214,20 +1025,16 @@
             return Math.max(0, total);
         }
         
-        // Add/remove activity count
+        // Adjust activity count
         function adjustActivityCount(categoryKey, activityId, change) {
             const childData = appData[currentChild];
             const activity = childData.activities[categoryKey].find(a => a.id === activityId);
             
-            if (!activity) {
-                console.error('Atividade não encontrada:', categoryKey, activityId);
-                return;
-            }
+            if (!activity) return;
             
             const now = new Date();
             const today = now.toISOString().split('T')[0];
             
-            // Find or create today's activity record
             let todayActivity = childData.todayActivities.find(a => 
                 a.id === activityId && a.date === today
             );
@@ -1248,17 +1055,16 @@
             todayActivity.count = Math.max(0, todayActivity.count + change);
             todayActivity.time = now.toLocaleTimeString('pt-BR');
             
-            // Remove if count is 0
             if (todayActivity.count === 0) {
                 const index = childData.todayActivities.indexOf(todayActivity);
                 childData.todayActivities.splice(index, 1);
             }
             
-            forceSave();
+            saveData();
             updateDisplay();
             
             const action = change > 0 ? 'adicionada' : 'removida';
-            showNotification(`"${activity.name}" ${action} e salva!`);
+            showNotification(`"${activity.name}" ${action}!`);
         }
         
         // Update multipliers
@@ -1269,12 +1075,12 @@
             childData.multipliers.negative = parseInt(document.getElementById('mult-negative').value) || 1;
             childData.multipliers.grave = parseInt(document.getElementById('mult-grave').value) || 100;
             
-            forceSave();
+            saveData();
             updateDisplay();
-            showNotification('Multiplicadores atualizados e salvos!');
+            showNotification('Multiplicadores atualizados!');
         }
         
-        // Edit activity functions
+        // Edit activity
         function editActivity(categoryKey, activityId) {
             const activity = appData[currentChild].activities[categoryKey].find(a => a.id === activityId);
             if (!activity) return;
@@ -1313,19 +1119,17 @@
             if (activityIndex !== -1) {
                 const activity = childData.activities[editingCategory][activityIndex];
                 
-                // Update activity
                 activity.name = newName;
                 activity.points = newPoints;
                 
-                // Move to new category if changed
                 if (newCategory !== editingCategory) {
                     childData.activities[editingCategory].splice(activityIndex, 1);
                     childData.activities[newCategory].push(activity);
                 }
                 
-                forceSave();
+                saveData();
                 updateDisplay();
-                showNotification('Atividade atualizada e salva!');
+                showNotification('Atividade atualizada!');
             }
             
             closeEditModal();
@@ -1342,16 +1146,15 @@
                 const activity = childData.activities[categoryKey][activityIndex];
                 childData.activities[categoryKey].splice(activityIndex, 1);
                 
-                // Remove from today's activities too
                 childData.todayActivities = childData.todayActivities.filter(ta => ta.id !== activityId);
                 
-                forceSave();
+                saveData();
                 updateDisplay();
-                showNotification(`"${activity.name}" excluída e salva!`);
+                showNotification(`"${activity.name}" excluída!`);
             }
         }
         
-        // Add new activity functions
+        // Add new activity
         function showAddModal(categoryKey) {
             document.getElementById('add-category').value = categoryKey;
             document.getElementById('add-name').value = '';
@@ -1381,13 +1184,13 @@
             
             appData[currentChild].activities[category].push(newActivity);
             
-            forceSave();
+            saveData();
             updateDisplay();
-            showNotification('Nova atividade adicionada e salva!');
+            showNotification('Nova atividade adicionada!');
             closeAddModal();
         }
         
-        // Export/Import functions
+        // Export/Import
         function exportData() {
             const dataStr = JSON.stringify(appData, null, 2);
             const dataBlob = new Blob([dataStr], { type: 'application/json' });
@@ -1413,9 +1216,9 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     appData = { ...appData, ...importedData };
-                    forceSave();
+                    saveData();
                     updateDisplay();
-                    showNotification('Dados importados e salvos!');
+                    showNotification('Dados importados!');
                 } catch (error) {
                     showNotification('Erro ao importar!', 'error');
                 }
@@ -1423,13 +1226,25 @@
             reader.readAsText(file);
         }
         
-        // Update display - FUNÇÃO PRINCIPAL
+        function debugStorage() {
+            console.log('=== DEBUG ===');
+            console.log('appData:', appData);
+            console.log('localStorage:', localStorage.getItem(STORAGE_KEY));
+            showNotification('Debug executado - veja o console');
+        }
+        
+        function clearAllData() {
+            if (confirm('Apagar todos os dados?')) {
+                localStorage.removeItem(STORAGE_KEY);
+                location.reload();
+            }
+        }
+        
+        // Update display
         function updateDisplay() {
-            console.log('🔄 Atualizando display para:', currentChild);
-            
             const childData = appData[currentChild];
             
-            // Update form fields with saved data
+            // Update form fields
             document.getElementById('saldo-inicial').value = childData.saldoInicial || '';
             document.getElementById('data-inicio').value = childData.dataInicio || '';
             
@@ -1479,22 +1294,17 @@
             
             document.getElementById('month-points').textContent = monthPoints;
             
-            // Update categories - CRÍTICO
+            // Update categories
             updateCategories();
             
             // Update today's activities
             updateTodayActivities();
         }
         
-        // Update categories display - FUNÇÃO CRÍTICA
+        // Update categories
         function updateCategories() {
-            console.log('🎯 Atualizando categorias...');
-            
             const container = document.getElementById('categories-container');
-            if (!container) {
-                console.error('❌ Container de categorias não encontrado!');
-                return;
-            }
+            if (!container) return;
             
             const childData = appData[currentChild];
             
@@ -1511,8 +1321,6 @@
                 const category = categories[categoryKey];
                 const activities = childData.activities[categoryKey] || [];
                 
-                console.log(`📝 Categoria ${categoryKey}:`, activities.length, 'atividades');
-                
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = `category-card ${category.class}`;
                 
@@ -1526,10 +1334,7 @@
                     const sign = categoryKey === 'negative' || categoryKey === 'grave' ? '-' : '+';
                     
                     return `
-                        <div class="activity-item" 
-                             draggable="true" 
-                             data-activity-id="${activity.id}"
-                             data-category="${categoryKey}">
+                        <div class="activity-item">
                             <div class="drag-handle">⋮⋮</div>
                             <div class="activity-content">
                                 <div class="activity-name">${activity.name}</div>
@@ -1555,7 +1360,7 @@
                         <div class="category-title">${category.title}</div>
                         <div class="category-multiplier">x${category.multiplier}</div>
                     </div>
-                    <div class="activity-list" data-category="${categoryKey}">
+                    <div class="activity-list">
                         ${activitiesHtml}
                     </div>
                     <button class="btn-add" onclick="showAddModal('${categoryKey}')">+ Adicionar Atividade</button>
@@ -1563,8 +1368,6 @@
                 
                 container.appendChild(categoryDiv);
             });
-            
-            console.log('✅ Categorias atualizadas com sucesso!');
         }
         
         // Update today's activities
@@ -1608,70 +1411,25 @@
                 !(a.id === activityId && a.date === today)
             );
             
-            forceSave();
+            saveData();
             updateDisplay();
-            showNotification('Atividade removida e salva!');
+            showNotification('Atividade removida!');
         }
         
-        // Event listeners
+        // Initialize
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 DOM CARREGADO - INICIANDO SISTEMA ROBUSTO...');
+            console.log('🚀 INICIANDO SISTEMA FUNCIONAL...');
             
-            // Load saved data FIRST
+            // Load data
             loadData();
             
-            // Child selector
-            document.querySelectorAll('.child-tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    switchChild(this.dataset.child);
-                });
-            });
-            
-            // Tab selector
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', function() {
-                    switchTab(this.dataset.tab);
-                });
-            });
-            
-            // Modal close on outside click
-            window.addEventListener('click', function(event) {
-                const editModal = document.getElementById('edit-modal');
-                const addModal = document.getElementById('add-modal');
-                
-                if (event.target === editModal) {
-                    closeEditModal();
-                }
-                if (event.target === addModal) {
-                    closeAddModal();
-                }
-            });
-            
-            // SUPER ROBUST AUTO-SAVE
-            window.addEventListener('beforeunload', function(e) {
-                console.log('🔄 Salvamento antes de fechar...');
-                forceSave();
-            });
-            
-            // Periodic auto-save mais frequente
+            // Auto-save every 30 seconds
             setInterval(() => {
-                console.log('🔄 Auto-save periódico...');
-                forceSave();
-            }, 15000); // A cada 15 segundos
+                saveData();
+            }, 30000);
             
-            // Save on visibility change
-            document.addEventListener('visibilitychange', function() {
-                if (document.hidden) {
-                    console.log('🔄 Salvamento por mudança de visibilidade...');
-                    forceSave();
-                }
-            });
-            
-            // Save on page focus/blur
-            window.addEventListener('blur', function() {
-                console.log('🔄 Salvamento por perda de foco...');
-                forceSave();
-            });
+            // Save before unload
+            window.addEventListener('beforeunload', saveData);
             
             // Initialize display
             updateDisplay();
@@ -1680,7 +1438,20 @@
             setInterval(updateDateTime, 1000);
             updateDateTime();
             
-            console.log('✅ SISTEMA ROBUSTO INICIADO COM SUCESSO!');
+            console.log('✅ SISTEMA FUNCIONAL INICIADO!');
+        });
+        
+        // Modal close on outside click
+        window.addEventListener('click', function(event) {
+            const editModal = document.getElementById('edit-modal');
+            const addModal = document.getElementById('add-modal');
+            
+            if (event.target === editModal) {
+                closeEditModal();
+            }
+            if (event.target === addModal) {
+                closeAddModal();
+            }
         });
     </script>
 </body>
