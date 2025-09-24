@@ -905,13 +905,17 @@
         // SISTEMA COM SINCRONIZAÇÃO GOOGLE DRIVE
         console.log('🚀 INICIANDO SISTEMA COM GOOGLE DRIVE...');
         
-        // Google Drive Configuration
+        // Google Drive configuration
         const GOOGLE_CONFIG = {
-            apiKey: 'AIzaSyBvOkBwb08kBtVFSRxCEBulbdWNlqDcXwI', // Chave pública para Google Drive API
-            clientId: '1002704718980-3aopluasrsqdvona293nae8atndedrq4.apps.googleusercontent.com', // Cliente OAuth configurado
+            apiKey: 'AIzaSyBH8tTL79tzldlilw2M3M7cPmFk8tTL79t',
+            clientId: '1002704718980-3aopluasrsqdvona293nae8atndedrq4.apps.googleusercontent.com',
             discoveryDoc: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
             scopes: 'https://www.googleapis.com/auth/drive.file'
         };
+        
+        // Global variables for Google Drive
+        let isGoogleDriveReady = false;
+        let authInstance = null;
         
         // Storage keys
         const STORAGE_KEY = 'kidsPointsSystem_functional';
@@ -967,49 +971,55 @@
             version: '2.0'
         };
         
+        // Load Google API script
+        function loadGoogleAPI() {
+            return new Promise((resolve, reject) => {
+                if (typeof window.gapi !== 'undefined') {
+                    console.log('✅ Google API já carregada');
+                    resolve();
+                    return;
+                }
+                
+                console.log('📥 Carregando Google API...');
+                const script = document.createElement('script');
+                script.src = 'https://apis.google.com/js/api.js';
+                script.async = true;
+                script.defer = true;
+                
+                script.onload = () => {
+                    console.log('✅ Script Google API carregado');
+                    window.gapi.load('auth2:client', {
+                        callback: () => {
+                            console.log('✅ Auth2 e Client carregados');
+                            resolve();
+                        },
+                        onerror: () => {
+                            console.error('❌ Erro ao carregar auth2:client');
+                            reject(new Error('Erro ao carregar auth2:client'));
+                        }
+                    });
+                };
+                
+                script.onerror = () => {
+                    console.error('❌ Erro ao carregar script Google API');
+                    reject(new Error('Erro ao carregar script Google API'));
+                };
+                
+                document.head.appendChild(script);
+            });
+        }
+        
         // Initialize Google Drive
         async function initializeGoogleDrive() {
             try {
-                console.log('🔄 Iniciando carregamento do Google Drive...');
+                console.log('🔄 Iniciando inicialização do Google Drive...');
+                updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
                 
-                // Verificar se a API já está disponível
-                if (typeof gapi === 'undefined') {
-                    console.log('📥 Google API não disponível, carregando...');
-                    
-                    // Aguardar o carregamento da API do Google com timeout reduzido
-                    await new Promise((resolve, reject) => {
-                        const timeout = setTimeout(() => {
-                            reject(new Error('Timeout ao carregar Google API'));
-                        }, 5000); // 5 segundos timeout
-                        
-                        const script = document.createElement('script');
-                        script.src = 'https://apis.google.com/js/api.js';
-                        script.onload = () => {
-                            console.log('✅ Google API carregada');
-                            clearTimeout(timeout);
-                            gapi.load('auth2:client', () => {
-                                console.log('✅ Auth2 e Client carregados');
-                                resolve();
-                            });
-                        };
-                        script.onerror = (error) => {
-                            clearTimeout(timeout);
-                            reject(new Error('Erro ao carregar Google API'));
-                        };
-                        document.head.appendChild(script);
-                    });
-                } else {
-                    console.log('✅ Google API já disponível');
-                    await new Promise((resolve) => {
-                        gapi.load('auth2:client', () => {
-                            console.log('✅ Auth2 e Client carregados');
-                            resolve();
-                        });
-                    });
-                }
+                // Carregar API do Google
+                await loadGoogleAPI();
                 
                 console.log('🔧 Inicializando cliente Google...');
-                await gapi.client.init({
+                await window.gapi.client.init({
                     apiKey: GOOGLE_CONFIG.apiKey,
                     clientId: GOOGLE_CONFIG.clientId,
                     discoveryDocs: [GOOGLE_CONFIG.discoveryDoc],
@@ -1017,9 +1027,11 @@
                 });
                 
                 console.log('📁 Carregando Google Drive API...');
-                await loadGoogleDriveAPI();
+                await window.gapi.client.load('drive', 'v3');
                 
-                const authInstance = gapi.auth2.getAuthInstance();
+                authInstance = window.gapi.auth2.getAuthInstance();
+                isGoogleDriveReady = true;
+                
                 console.log('🔐 Verificando status de autenticação...');
                 
                 if (authInstance.isSignedIn.get()) {
@@ -1036,23 +1048,9 @@
             } catch (error) {
                 console.error('❌ Erro ao inicializar Google Drive:', error);
                 updateSyncStatus('disconnected', '🔗 Clique em "Conectar" para sincronizar');
-                
-                // Não mostrar notificação de erro na inicialização
+                isGoogleDriveReady = false;
                 console.log('ℹ️ Sistema funcionando apenas com dados locais');
             }
-        }        
-        // Load Google Drive API
-        async function loadGoogleDriveAPI() {
-            return new Promise((resolve) => {
-                gapi.load('client', async () => {
-                    await gapi.client.init({
-                        apiKey: GOOGLE_CONFIG.apiKey,
-                        discoveryDocs: [GOOGLE_CONFIG.discoveryDoc]
-                    });
-                    isGoogleDriveReady = true;
-                    resolve();
-                });
-            });
         }
         
         // Update sync status
@@ -1088,7 +1086,6 @@
                 
                 updateSyncStatus('disconnected', '🔄 Conectando...');
                 
-                const authInstance = gapi.auth2.getAuthInstance();
                 console.log('🔐 Iniciando processo de autenticação...');
                 
                 const user = await authInstance.signIn({
@@ -1126,15 +1123,11 @@
         // Disconnect from Google Drive
         async function disconnectGoogleDrive() {
             try {
-                const authInstance = gapi.auth2.getAuthInstance();
-                await authInstance.signOut();
-                
-                isGoogleDriveReady = false;
-                googleDriveFileId = null;
-                
-                updateSyncStatus('disconnected', '❌ Desconectado do Google Drive');
-                showNotification('Desconectado do Google Drive');
-                
+                if (authInstance) {
+                    await authInstance.signOut();
+                    updateSyncStatus('disconnected', '❌ Desconectado');
+                    showNotification('Desconectado do Google Drive');
+                }
             } catch (error) {
                 console.error('Erro ao desconectar:', error);
                 showNotification('Erro ao desconectar', 'error');
@@ -1143,7 +1136,6 @@
         
         // Toggle sync connection
         function toggleSync() {
-            const authInstance = gapi.auth2.getAuthInstance();
             if (authInstance && authInstance.isSignedIn.get()) {
                 disconnectGoogleDrive();
             } else {
@@ -1153,42 +1145,41 @@
         
         // Find or create file in Google Drive
         async function findOrCreateDriveFile() {
-            if (!isGoogleDriveReady) return null;
-            
             try {
-                // Search for existing file in user's Drive (not appDataFolder)
-                const response = await gapi.client.drive.files.list({
-                    q: `name='${DRIVE_FILE_NAME}' and trashed=false`,
-                    spaces: 'drive'
+                if (!isGoogleDriveReady) return null;
+                
+                console.log('🔍 Procurando arquivo no Google Drive...');
+                
+                // Search for existing file
+                const response = await window.gapi.client.drive.files.list({
+                    q: "name='kids_points_system.json' and parents in 'appDataFolder'",
+                    spaces: 'appDataFolder'
                 });
                 
                 if (response.result.files.length > 0) {
-                    googleDriveFileId = response.result.files[0].id;
-                    console.log('✅ Arquivo encontrado:', googleDriveFileId);
-                    return googleDriveFileId;
+                    const fileId = response.result.files[0].id;
+                    console.log('✅ Arquivo encontrado:', fileId);
+                    return fileId;
                 }
                 
-                // Create new file in user's Drive root
+                // Create new file
+                console.log('📝 Criando novo arquivo...');
                 const fileMetadata = {
-                    name: DRIVE_FILE_NAME,
-                    description: 'Dados do Sistema de Pontos para Crianças'
+                    name: 'kids_points_system.json',
+                    parents: ['appDataFolder']
                 };
                 
-                const createResponse = await gapi.client.drive.files.create({
-                    resource: fileMetadata,
-                    media: {
-                        mimeType: 'application/json',
-                        body: JSON.stringify(appData)
-                    }
+                const createResponse = await window.gapi.client.drive.files.create({
+                    resource: fileMetadata
                 });
                 
-                googleDriveFileId = createResponse.result.id;
-                console.log('✅ Arquivo criado:', googleDriveFileId);
-                return googleDriveFileId;
+                const fileId = createResponse.result.id;
+                console.log('✅ Arquivo criado:', fileId);
+                return fileId;
                 
             } catch (error) {
                 console.error('❌ Erro ao encontrar/criar arquivo:', error);
-                return null;
+                throw error;
             }
         }
         
