@@ -383,24 +383,31 @@
             display: flex;
             gap: 8px;
         }
-        
-        .edit-btn, .delete-btn {
-            background: rgba(255,255,255,0.3);
+                .edit-btn, .delete-btn, .move-btn {
+            background: none;
             border: none;
-            border-radius: 6px;
-            padding: 8px 12px;
-            cursor: pointer;
             font-size: 16px;
-            color: white;
-            transition: all 0.3s ease;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 4px;
+            transition: background-color 0.2s;
+        }
+        
+        .move-btn {
+            font-size: 14px;
+            margin-right: 2px;
+        }
+        
+        .move-btn:hover {
+            background-color: rgba(155, 89, 182, 0.2);
         }
         
         .edit-btn:hover {
-            background: rgba(255,255,255,0.5);
+            background-color: rgba(52, 152, 219, 0.2);
         }
         
         .delete-btn:hover {
-            background: rgba(255,0,0,0.5);
+            background-color: rgba(231, 76, 60, 0.2);
         }
         
         .activity-points {
@@ -890,7 +897,7 @@
     </div>
     
     <!-- Google Drive API -->
-    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
     
     <script>
         // SISTEMA COM SINCRONIZAÇÃO GOOGLE DRIVE
@@ -899,7 +906,7 @@
         // Google Drive Configuration
         const GOOGLE_CONFIG = {
             apiKey: 'AIzaSyBvOkBwb08kBtVFSRxCEBulbdWNlqDcXwI', // Chave pública para Google Drive API
-            clientId: '1234567890-abcdefghijklmnopqrstuvwxyz.apps.googleusercontent.com', // Será configurado
+            clientId: '1002704718980-3aopluasrsqdvona293nae8atndedrq4.apps.googleusercontent.com', // Cliente OAuth configurado
             discoveryDoc: 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest',
             scopes: 'https://www.googleapis.com/auth/drive.file'
         };
@@ -955,36 +962,57 @@
                 multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
             },
             lastModified: new Date().toISOString(),
-            version: '1.0'
+            version: '2.0'
         };
         
-        // Initialize Google Drive API
+        // Initialize Google Drive
         async function initializeGoogleDrive() {
             try {
-                await gapi.load('auth2', async () => {
-                    await gapi.auth2.init({
-                        client_id: GOOGLE_CONFIG.clientId
-                    });
-                    
-                    const authInstance = gapi.auth2.getAuthInstance();
-                    const isSignedIn = authInstance.isSignedIn.get();
-                    
-                    if (isSignedIn) {
-                        await loadGoogleDriveAPI();
-                        updateSyncStatus('connected', '✅ Conectado ao Google Drive');
-                        await syncFromDrive();
+                updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
+                
+                // Aguardar o carregamento da API do Google
+                await new Promise((resolve, reject) => {
+                    if (typeof gapi === 'undefined') {
+                        const script = document.createElement('script');
+                        script.src = 'https://apis.google.com/js/api.js';
+                        script.onload = () => {
+                            gapi.load('auth2:client', resolve);
+                        };
+                        script.onerror = reject;
+                        document.head.appendChild(script);
                     } else {
-                        updateSyncStatus('disconnected', '❌ Desconectado do Google Drive');
+                        gapi.load('auth2:client', resolve);
                     }
                 });
+                
+                await gapi.client.init({
+                    apiKey: GOOGLE_CONFIG.apiKey,
+                    clientId: GOOGLE_CONFIG.clientId,
+                    discoveryDocs: [GOOGLE_CONFIG.discoveryDoc],
+                    scope: GOOGLE_CONFIG.scopes
+                });
+                
+                await loadGoogleDriveAPI();
+                
+                const authInstance = gapi.auth2.getAuthInstance();
+                
+                if (authInstance.isSignedIn.get()) {
+                    updateSyncStatus('connected', '✅ Conectado ao Google Drive');
+                    await loadData();
+                } else {
+                    updateSyncStatus('disconnected', '❌ Clique em "Conectar" para sincronizar');
+                }
+                
+                console.log('✅ Google Drive inicializado');
+                
             } catch (error) {
-                console.error('Erro ao inicializar Google Drive:', error);
-                updateSyncStatus('disconnected', '❌ Erro na conexão');
-                // Fallback para localStorage
-                loadData();
+                console.error('❌ Erro ao inicializar Google Drive:', error);
+                updateSyncStatus('disconnected', '❌ Erro na inicialização - usando dados locais');
+                
+                // Fallback to local storage
+                loadDataLocal();
             }
-        }
-        
+        }        
         // Load Google Drive API
         async function loadGoogleDriveAPI() {
             return new Promise((resolve) => {
@@ -1076,7 +1104,7 @@
             if (!isGoogleDriveReady) return null;
             
             try {
-                // Search for existing file
+                // Search for existing file in user's Drive (not appDataFolder)
                 const response = await gapi.client.drive.files.list({
                     q: `name='${DRIVE_FILE_NAME}' and trashed=false`,
                     spaces: 'drive'
@@ -1084,13 +1112,14 @@
                 
                 if (response.result.files.length > 0) {
                     googleDriveFileId = response.result.files[0].id;
+                    console.log('✅ Arquivo encontrado:', googleDriveFileId);
                     return googleDriveFileId;
                 }
                 
-                // Create new file
+                // Create new file in user's Drive root
                 const fileMetadata = {
                     name: DRIVE_FILE_NAME,
-                    parents: ['appDataFolder'] // Store in app data folder
+                    description: 'Dados do Sistema de Pontos para Crianças'
                 };
                 
                 const createResponse = await gapi.client.drive.files.create({
@@ -1102,10 +1131,11 @@
                 });
                 
                 googleDriveFileId = createResponse.result.id;
+                console.log('✅ Arquivo criado:', googleDriveFileId);
                 return googleDriveFileId;
                 
             } catch (error) {
-                console.error('Erro ao encontrar/criar arquivo:', error);
+                console.error('❌ Erro ao encontrar/criar arquivo:', error);
                 return null;
             }
         }
@@ -1113,7 +1143,7 @@
         // Sync data to Google Drive
         async function syncToDrive() {
             if (!isGoogleDriveReady) {
-                console.log('Google Drive não está pronto');
+                console.log('❌ Google Drive não está pronto');
                 return false;
             }
             
@@ -1128,18 +1158,18 @@
                 // Update last modified
                 appData.lastModified = new Date().toISOString();
                 
-                // Upload data
-                const response = await gapi.client.request({
-                    path: `https://www.googleapis.com/upload/drive/v3/files/${fileId}`,
-                    method: 'PATCH',
-                    params: {
-                        uploadType: 'media'
-                    },
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(appData)
-                });
+                // Prepare data for upload
+                const dataToUpload = JSON.stringify(appData, null, 2);
+                
+                // Upload data using the simpler files.update method
+                const response = await gapi.client.drive.files.update({
+                    fileId: fileId,
+                    uploadType: 'media',
+                    resource: {
+                        name: DRIVE_FILE_NAME,
+                        description: 'Dados do Sistema de Pontos para Crianças - Atualizado em ' + new Date().toLocaleString('pt-BR')
+                    }
+                }, dataToUpload);
                 
                 lastSyncTime = new Date();
                 updateSyncStatus('connected', `✅ Sincronizado às ${lastSyncTime.toLocaleTimeString()}`);
@@ -1147,10 +1177,11 @@
                 // Also save locally as backup
                 saveDataLocal();
                 
+                console.log('✅ Dados sincronizados com sucesso');
                 return true;
                 
             } catch (error) {
-                console.error('Erro ao sincronizar:', error);
+                console.error('❌ Erro ao sincronizar:', error);
                 updateSyncStatus('connected', '⚠️ Erro na sincronização');
                 showNotification('Erro ao sincronizar com Google Drive', 'error');
                 
@@ -1163,16 +1194,16 @@
         // Sync data from Google Drive
         async function syncFromDrive() {
             if (!isGoogleDriveReady) {
-                console.log('Google Drive não está pronto');
+                console.log('❌ Google Drive não está pronto');
                 return false;
             }
             
             try {
-                updateSyncStatus('connected', '🔄 Carregando...');
+                updateSyncStatus('connected', '🔄 Carregando do Drive...');
                 
                 const fileId = await findOrCreateDriveFile();
                 if (!fileId) {
-                    console.log('Arquivo não encontrado, usando dados locais');
+                    console.log('⚠️ Arquivo não encontrado, usando dados locais');
                     loadDataLocal();
                     return false;
                 }
@@ -1183,7 +1214,18 @@
                     alt: 'media'
                 });
                 
+                if (!response.body) {
+                    console.log('⚠️ Arquivo vazio, usando dados locais');
+                    return false;
+                }
+                
                 const driveData = JSON.parse(response.body);
+                
+                // Validate data structure
+                if (!driveData.luiza && !driveData.miguel) {
+                    console.log('⚠️ Dados inválidos no Drive, usando dados locais');
+                    return false;
+                }
                 
                 // Check if drive data is newer
                 const driveModified = new Date(driveData.lastModified || 0);
@@ -1194,21 +1236,30 @@
                     // Use drive data
                     appData = { ...appData, ...driveData };
                     saveDataLocal();
-                    showNotification('Dados sincronizados do Google Drive!');
+                    
+                    // Update UI
+                    updateChildSelector();
+                    updateDisplay();
+                    
+                    lastSyncTime = new Date();
+                    updateSyncStatus('connected', `✅ Carregado às ${lastSyncTime.toLocaleTimeString()}`);
+                    
+                    showNotification('Dados carregados do Google Drive', 'success');
+                    console.log('✅ Dados carregados do Drive com sucesso');
+                    return true;
                 } else {
                     // Use local data and sync to drive
+                    console.log('ℹ️ Dados locais são mais recentes, sincronizando para o Drive');
                     await syncToDrive();
+                    
+                    updateSyncStatus('connected', '✅ Dados locais mais recentes');
+                    return true;
                 }
                 
-                lastSyncTime = new Date();
-                updateSyncStatus('connected', `✅ Sincronizado às ${lastSyncTime.toLocaleTimeString()}`);
-                
-                updateDisplay();
-                return true;
-                
             } catch (error) {
-                console.error('Erro ao carregar do Drive:', error);
+                console.error('❌ Erro ao carregar do Drive:', error);
                 updateSyncStatus('connected', '⚠️ Erro ao carregar');
+                showNotification('Erro ao carregar do Google Drive', 'error');
                 
                 // Fallback to local storage
                 loadDataLocal();
@@ -1491,14 +1542,31 @@
                 return;
             }
             
+            if (newPoints < 1) {
+                showNotification('Pontos devem ser maior que zero!', 'error');
+                return;
+            }
+            
             const childData = appData[currentChild];
             const activityIndex = childData.activities[editingCategory].findIndex(a => a.id === editingActivityId);
             
             if (activityIndex !== -1) {
                 const activity = childData.activities[editingCategory][activityIndex];
+                const oldName = activity.name;
                 
                 activity.name = newName;
                 activity.points = newPoints;
+                
+                // Update today's activities with new name and points
+                childData.todayActivities.forEach(ta => {
+                    if (ta.id === editingActivityId) {
+                        ta.name = newName;
+                        ta.points = newPoints;
+                        if (newCategory !== editingCategory) {
+                            ta.category = newCategory;
+                        }
+                    }
+                });
                 
                 if (newCategory !== editingCategory) {
                     childData.activities[editingCategory].splice(activityIndex, 1);
@@ -1507,10 +1575,33 @@
                 
                 await saveData();
                 updateDisplay();
-                showNotification('Atividade atualizada!');
+                showNotification(`Atividade "${oldName}" atualizada para "${newName}"!`);
             }
             
             closeEditModal();
+        }
+        
+        // Move activity up or down
+        async function moveActivity(categoryKey, currentIndex, direction) {
+            const childData = appData[currentChild];
+            const activities = childData.activities[categoryKey];
+            const newIndex = currentIndex + direction;
+            
+            // Check bounds
+            if (newIndex < 0 || newIndex >= activities.length) {
+                return;
+            }
+            
+            // Swap activities
+            const temp = activities[currentIndex];
+            activities[currentIndex] = activities[newIndex];
+            activities[newIndex] = temp;
+            
+            await saveData();
+            updateDisplay();
+            
+            const directionText = direction === -1 ? 'para cima' : 'para baixo';
+            showNotification(`Atividade movida ${directionText}!`);
         }
         
         // Delete activity
@@ -1547,24 +1638,40 @@
         async function saveNewActivity() {
             const name = document.getElementById('add-name').value.trim();
             const points = parseInt(document.getElementById('add-points').value) || 1;
-            const category = document.getElementById('add-category').value;
             
             if (!name) {
                 showNotification('Nome é obrigatório!', 'error');
                 return;
             }
             
+            if (points < 1) {
+                showNotification('Pontos devem ser maior que zero!', 'error');
+                return;
+            }
+            
+            // Check for duplicate names in the same category
+            const childData = appData[currentChild];
+            const existingActivity = childData.activities[addingToCategory].find(a => 
+                a.name.toLowerCase() === name.toLowerCase()
+            );
+            
+            if (existingActivity) {
+                showNotification('Já existe uma atividade com este nome nesta categoria!', 'error');
+                return;
+            }
+            
             const newActivity = {
-                id: `${category}_${Date.now()}`,
+                id: Date.now().toString(),
                 name: name,
                 points: points
             };
             
-            appData[currentChild].activities[category].push(newActivity);
+            childData.activities[addingToCategory].push(newActivity);
             
             await saveData();
             updateDisplay();
-            showNotification('Nova atividade adicionada!');
+            showNotification(`"${name}" adicionada com sucesso!`);
+            
             closeAddModal();
         }
         
@@ -1738,6 +1845,8 @@
                                         <button class="counter-btn" onclick="adjustActivityCount('${categoryKey}', '${activity.id}', 1)">+</button>
                                     </div>
                                     <div class="activity-actions">
+                                        <button class="move-btn" onclick="moveActivity('${categoryKey}', ${index}, -1)" title="Mover para cima">⬆️</button>
+                                        <button class="move-btn" onclick="moveActivity('${categoryKey}', ${index}, 1)" title="Mover para baixo">⬇️</button>
                                         <button class="edit-btn" onclick="editActivity('${categoryKey}', '${activity.id}')">✏️</button>
                                         <button class="delete-btn" onclick="deleteActivity('${categoryKey}', '${activity.id}')">🗑️</button>
                                     </div>
@@ -1808,38 +1917,54 @@
             updateDisplay();
             showNotification('Atividade removida!');
         }
-        
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('🚀 INICIANDO SISTEMA COM GOOGLE DRIVE...');
+               // Initialize app
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 DOM carregado, inicializando...');
             
-            // Load local data first
+            // Load data first
             loadDataLocal();
             
-            // Initialize Google Drive
-            await initializeGoogleDrive();
-            
-            // Auto-sync every 2 minutes if connected
-            setInterval(async () => {
-                if (isGoogleDriveReady) {
-                    await syncToDrive();
-                }
-            }, 120000);
-            
-            // Save before unload
-            window.addEventListener('beforeunload', async () => {
-                await saveData();
-            });
-            
-            // Initialize display
+            // Initialize UI
+            updateChildSelector();
             updateDisplay();
             
-            // Update datetime every second
-            setInterval(updateDateTime, 1000);
-            updateDateTime();
+            // Initialize Google Drive when API is ready
+            if (typeof gapi !== 'undefined') {
+                initializeGoogleDrive();
+            } else {
+                // Wait for Google API to load
+                window.addEventListener('load', () => {
+                    setTimeout(() => {
+                        if (typeof gapi !== 'undefined') {
+                            initializeGoogleDrive();
+                        } else {
+                            console.log('⚠️ Google API não carregou, usando apenas dados locais');
+                            updateSyncStatus('disconnected', '❌ Google API não disponível');
+                        }
+                    }, 1000);
+                });
+            }
             
-            console.log('✅ SISTEMA COM GOOGLE DRIVE INICIADO!');
+            console.log('✅ Sistema inicializado');
         });
+        
+        // Auto-sync every 2 minutes if connected
+        setInterval(async () => {
+            if (isGoogleDriveReady) {
+                await syncToDrive();
+            }
+        }, 120000);
+        
+        // Save before unload
+        window.addEventListener('beforeunload', async () => {
+            await saveData();
+        });
+        
+        // Update datetime every second
+        setInterval(updateDateTime, 1000);
+        updateDateTime();
+        
+        console.log('✅ SISTEMA COM GOOGLE DRIVE INICIADO!');
         
         // Modal close on outside click
         window.addEventListener('click', function(event) {
