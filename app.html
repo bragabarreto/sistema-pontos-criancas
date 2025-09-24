@@ -437,6 +437,22 @@
             background: #059669;
         }
         
+        .btn-add {
+            background: #10b981;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 15px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            width: 100%;
+        }
+        
+        .btn-add:hover {
+            background: #059669;
+        }
+        
         .notification {
             position: fixed;
             top: 20px;
@@ -506,6 +522,84 @@
         
         .remove-today-btn:hover {
             background: #dc2626;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 15% auto;
+            padding: 20px;
+            border-radius: 12px;
+            width: 80%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .modal-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        
+        .close:hover {
+            color: black;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+        }
+        
+        .form-group input, .form-group select {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e1e5e9;
+            border-radius: 6px;
+            font-size: 16px;
+        }
+        
+        .modal-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+            margin-top: 20px;
+        }
+        
+        .btn-cancel {
+            background: #6c757d;
+            color: white;
+        }
+        
+        .btn-cancel:hover {
+            background: #5a6268;
         }
     </style>
 </head>
@@ -632,34 +726,98 @@
     <!-- Notification -->
     <div id="notification" class="notification"></div>
     
+    <!-- Modal for editing activities -->
+    <div id="edit-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Editar Atividade</h2>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Nome da Atividade:</label>
+                <input type="text" id="edit-name" placeholder="Nome da atividade">
+            </div>
+            <div class="form-group">
+                <label>Pontos Base:</label>
+                <input type="number" id="edit-points" min="1" placeholder="Pontos">
+            </div>
+            <div class="form-group">
+                <label>Categoria:</label>
+                <select id="edit-category">
+                    <option value="positive">Positivos</option>
+                    <option value="special">Especiais</option>
+                    <option value="negative">Negativos</option>
+                    <option value="grave">Graves</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeEditModal()">Cancelar</button>
+                <button class="btn btn-success" onclick="saveEditActivity()">Salvar</button>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Modal for adding new activities -->
+    <div id="add-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Adicionar Nova Atividade</h2>
+                <span class="close" onclick="closeAddModal()">&times;</span>
+            </div>
+            <div class="form-group">
+                <label>Nome da Atividade:</label>
+                <input type="text" id="add-name" placeholder="Nome da atividade">
+            </div>
+            <div class="form-group">
+                <label>Pontos Base:</label>
+                <input type="number" id="add-points" min="1" placeholder="Pontos" value="1">
+            </div>
+            <div class="form-group">
+                <label>Categoria:</label>
+                <select id="add-category">
+                    <option value="positive">Positivos</option>
+                    <option value="special">Especiais</option>
+                    <option value="negative">Negativos</option>
+                    <option value="grave">Graves</option>
+                </select>
+            </div>
+            <div class="modal-actions">
+                <button class="btn btn-cancel" onclick="closeAddModal()">Cancelar</button>
+                <button class="btn btn-success" onclick="saveNewActivity()">Adicionar</button>
+            </div>
+        </div>
+    </div>
+    
     <script>
         // Global variables
         let currentChild = 'luiza';
         let currentTab = 'dashboard';
         let draggedElement = null;
         let draggedFromCategory = null;
+        let editingActivityId = null;
+        let editingCategory = null;
         
         // Data structure with default activities
         const defaultActivities = {
             positive: [
-                { id: 'pos1', name: 'Escovar os dentes', points: 1, count: 0 },
-                { id: 'pos2', name: 'Guardar brinquedos', points: 1, count: 0 },
-                { id: 'pos3', name: 'Ajudar nas tarefas', points: 1, count: 0 }
+                { id: 'pos1', name: 'Escovar os dentes', points: 1 },
+                { id: 'pos2', name: 'Guardar brinquedos', points: 1 },
+                { id: 'pos3', name: 'Ajudar nas tarefas', points: 1 }
             ],
             special: [
-                { id: 'spe1', name: 'Ler um livro completo', points: 1, count: 0 },
-                { id: 'spe2', name: 'Fazer lição sem ajuda', points: 1, count: 0 },
-                { id: 'spe3', name: 'Comer frutas/verduras', points: 1, count: 0 }
+                { id: 'spe1', name: 'Ler um livro completo', points: 1 },
+                { id: 'spe2', name: 'Fazer lição sem ajuda', points: 1 },
+                { id: 'spe3', name: 'Comer frutas/verduras', points: 1 }
             ],
             negative: [
-                { id: 'neg1', name: 'Não escovar os dentes', points: 1, count: 0 },
-                { id: 'neg2', name: 'Deixar quarto bagunçado', points: 1, count: 0 },
-                { id: 'neg3', name: 'Não fazer lição', points: 2, count: 0 }
+                { id: 'neg1', name: 'Não escovar os dentes', points: 1 },
+                { id: 'neg2', name: 'Deixar quarto bagunçado', points: 1 },
+                { id: 'neg3', name: 'Não fazer lição', points: 2 }
             ],
             grave: [
-                { id: 'gra1', name: 'Bater no irmão', points: 1, count: 0 },
-                { id: 'gra2', name: 'Mentir', points: 1, count: 0 },
-                { id: 'gra3', name: 'Quebrar algo de propósito', points: 1, count: 0 }
+                { id: 'gra1', name: 'Bater no irmão', points: 1 },
+                { id: 'gra2', name: 'Mentir', points: 1 },
+                { id: 'gra3', name: 'Quebrar algo de propósito', points: 1 }
             ]
         };
         
@@ -681,33 +839,77 @@
             }
         };
         
-        // Load data from localStorage
-        function loadData() {
+        // ROBUST SAVE/LOAD FUNCTIONS
+        function saveData() {
             try {
+                const dataToSave = JSON.stringify(appData);
+                localStorage.setItem('kidsPointsSystem', dataToSave);
+                
+                // Verificação dupla
                 const saved = localStorage.getItem('kidsPointsSystem');
                 if (saved) {
-                    const data = JSON.parse(saved);
-                    // Merge with default structure to ensure all properties exist
-                    appData.luiza = { ...appData.luiza, ...data.luiza };
-                    appData.miguel = { ...appData.miguel, ...data.miguel };
-                    console.log('Dados carregados:', appData);
-                    showNotification('Dados carregados com sucesso!');
+                    console.log('✅ DADOS SALVOS COM SUCESSO:', JSON.parse(saved));
+                    showNotification('Dados salvos automaticamente!');
+                    return true;
+                } else {
+                    throw new Error('Falha na verificação de salvamento');
                 }
             } catch (e) {
-                console.error('Erro ao carregar dados:', e);
-                showNotification('Erro ao carregar dados, usando padrões', 'error');
+                console.error('❌ ERRO AO SALVAR:', e);
+                showNotification('ERRO: Dados não foram salvos!', 'error');
+                return false;
             }
         }
         
-        // Save data to localStorage
-        function saveData() {
+        function loadData() {
             try {
-                localStorage.setItem('kidsPointsSystem', JSON.stringify(appData));
-                console.log('Dados salvos:', appData);
-                showNotification('Dados salvos automaticamente!');
+                const saved = localStorage.getItem('kidsPointsSystem');
+                if (saved && saved !== 'null' && saved !== 'undefined') {
+                    const loadedData = JSON.parse(saved);
+                    
+                    // Merge com estrutura padrão para garantir integridade
+                    if (loadedData.luiza) {
+                        appData.luiza = {
+                            ...appData.luiza,
+                            ...loadedData.luiza,
+                            activities: loadedData.luiza.activities || appData.luiza.activities,
+                            todayActivities: loadedData.luiza.todayActivities || [],
+                            multipliers: loadedData.luiza.multipliers || appData.luiza.multipliers
+                        };
+                    }
+                    
+                    if (loadedData.miguel) {
+                        appData.miguel = {
+                            ...appData.miguel,
+                            ...loadedData.miguel,
+                            activities: loadedData.miguel.activities || appData.miguel.activities,
+                            todayActivities: loadedData.miguel.todayActivities || [],
+                            multipliers: loadedData.miguel.multipliers || appData.miguel.multipliers
+                        };
+                    }
+                    
+                    console.log('✅ DADOS CARREGADOS:', appData);
+                    showNotification('Dados carregados com sucesso!');
+                    return true;
+                } else {
+                    console.log('ℹ️ Nenhum dado salvo encontrado, usando padrões');
+                    return false;
+                }
             } catch (e) {
-                console.error('Erro ao salvar dados:', e);
-                showNotification('Erro ao salvar dados!', 'error');
+                console.error('❌ ERRO AO CARREGAR:', e);
+                showNotification('Erro ao carregar dados, usando padrões', 'error');
+                return false;
+            }
+        }
+        
+        // Force save on every change
+        function forceSave() {
+            const success = saveData();
+            if (!success) {
+                // Retry save
+                setTimeout(() => {
+                    saveData();
+                }, 1000);
             }
         }
         
@@ -781,7 +983,7 @@
             appData[currentChild].saldoInicial = saldo;
             appData[currentChild].dataInicio = data;
             
-            saveData();
+            forceSave();
             updateDisplay();
             showNotification('Saldo inicial definido com sucesso!');
         }
@@ -843,7 +1045,7 @@
                 childData.todayActivities.splice(index, 1);
             }
             
-            saveData();
+            forceSave();
             updateDisplay();
             
             const action = change > 0 ? 'adicionada' : 'removida';
@@ -858,9 +1060,122 @@
             childData.multipliers.negative = parseInt(document.getElementById('mult-negative').value) || 1;
             childData.multipliers.grave = parseInt(document.getElementById('mult-grave').value) || 100;
             
-            saveData();
+            forceSave();
             updateDisplay();
             showNotification('Multiplicadores atualizados!');
+        }
+        
+        // Edit activity functions
+        function editActivity(categoryKey, activityId) {
+            const activity = appData[currentChild].activities[categoryKey].find(a => a.id === activityId);
+            if (!activity) return;
+            
+            editingActivityId = activityId;
+            editingCategory = categoryKey;
+            
+            document.getElementById('edit-name').value = activity.name;
+            document.getElementById('edit-points').value = activity.points;
+            document.getElementById('edit-category').value = categoryKey;
+            
+            document.getElementById('edit-modal').style.display = 'block';
+        }
+        
+        function closeEditModal() {
+            document.getElementById('edit-modal').style.display = 'none';
+            editingActivityId = null;
+            editingCategory = null;
+        }
+        
+        function saveEditActivity() {
+            if (!editingActivityId || !editingCategory) return;
+            
+            const newName = document.getElementById('edit-name').value.trim();
+            const newPoints = parseInt(document.getElementById('edit-points').value) || 1;
+            const newCategory = document.getElementById('edit-category').value;
+            
+            if (!newName) {
+                showNotification('Nome da atividade é obrigatório!', 'error');
+                return;
+            }
+            
+            const childData = appData[currentChild];
+            const activityIndex = childData.activities[editingCategory].findIndex(a => a.id === editingActivityId);
+            
+            if (activityIndex !== -1) {
+                const activity = childData.activities[editingCategory][activityIndex];
+                
+                // Update activity
+                activity.name = newName;
+                activity.points = newPoints;
+                
+                // Move to new category if changed
+                if (newCategory !== editingCategory) {
+                    childData.activities[editingCategory].splice(activityIndex, 1);
+                    childData.activities[newCategory].push(activity);
+                }
+                
+                forceSave();
+                updateDisplay();
+                showNotification('Atividade atualizada com sucesso!');
+            }
+            
+            closeEditModal();
+        }
+        
+        // Delete activity
+        function deleteActivity(categoryKey, activityId) {
+            if (!confirm('Tem certeza que deseja excluir esta atividade?')) return;
+            
+            const childData = appData[currentChild];
+            const activityIndex = childData.activities[categoryKey].findIndex(a => a.id === activityId);
+            
+            if (activityIndex !== -1) {
+                const activity = childData.activities[categoryKey][activityIndex];
+                childData.activities[categoryKey].splice(activityIndex, 1);
+                
+                // Remove from today's activities too
+                childData.todayActivities = childData.todayActivities.filter(ta => ta.id !== activityId);
+                
+                forceSave();
+                updateDisplay();
+                showNotification(`Atividade "${activity.name}" excluída!`);
+            }
+        }
+        
+        // Add new activity functions
+        function showAddModal(categoryKey) {
+            document.getElementById('add-category').value = categoryKey;
+            document.getElementById('add-name').value = '';
+            document.getElementById('add-points').value = '1';
+            document.getElementById('add-modal').style.display = 'block';
+        }
+        
+        function closeAddModal() {
+            document.getElementById('add-modal').style.display = 'none';
+        }
+        
+        function saveNewActivity() {
+            const name = document.getElementById('add-name').value.trim();
+            const points = parseInt(document.getElementById('add-points').value) || 1;
+            const category = document.getElementById('add-category').value;
+            
+            if (!name) {
+                showNotification('Nome da atividade é obrigatório!', 'error');
+                return;
+            }
+            
+            const newActivity = {
+                id: `${category}_${Date.now()}`,
+                name: name,
+                points: points
+            };
+            
+            appData[currentChild].activities[category].push(newActivity);
+            
+            forceSave();
+            updateDisplay();
+            showNotification('Nova atividade adicionada!');
+            closeAddModal();
         }
         
         // Export data
@@ -890,7 +1205,7 @@
                 try {
                     const importedData = JSON.parse(e.target.result);
                     appData = { ...appData, ...importedData };
-                    saveData();
+                    forceSave();
                     updateDisplay();
                     showNotification('Dados importados com sucesso!');
                 } catch (error) {
@@ -967,7 +1282,7 @@
                 childData.activities[toCategory].push(activity);
             }
             
-            saveData();
+            forceSave();
             updateDisplay();
             showNotification(`Atividade "${activity.name}" movida com sucesso!`);
         }
@@ -975,6 +1290,10 @@
         // Update display
         function updateDisplay() {
             const childData = appData[currentChild];
+            
+            // Update form fields with saved data
+            document.getElementById('saldo-inicial').value = childData.saldoInicial || '';
+            document.getElementById('data-inicio').value = childData.dataInicio || '';
             
             // Update saldo info
             if (childData.saldoInicial && childData.dataInicio) {
@@ -986,6 +1305,10 @@
                 const diffTime = Math.abs(today - startDate);
                 const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
                 document.getElementById('info-dias').textContent = `${diffDays} dias`;
+            } else {
+                document.getElementById('info-saldo').textContent = 'Não definido';
+                document.getElementById('info-data').textContent = 'Não definida';
+                document.getElementById('info-dias').textContent = '0 dias';
             }
             
             // Update multiplier inputs
@@ -998,6 +1321,25 @@
             const totalPoints = calculateTotalPoints(currentChild);
             document.getElementById('total-points').textContent = totalPoints;
             document.getElementById('available-balance').textContent = `R$ ${(totalPoints * 0.01).toFixed(2)}`;
+            
+            // Calculate month points
+            const today = new Date();
+            const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
+            let monthPoints = 0;
+            
+            childData.todayActivities.forEach(activity => {
+                const activityDate = new Date(activity.date);
+                if (activityDate >= monthStart) {
+                    const multiplier = childData.multipliers[activity.category] || 1;
+                    if (activity.category === 'negative' || activity.category === 'grave') {
+                        monthPoints -= activity.points * multiplier * activity.count;
+                    } else {
+                        monthPoints += activity.points * multiplier * activity.count;
+                    }
+                }
+            });
+            
+            document.getElementById('month-points').textContent = monthPoints;
             
             // Update categories
             updateCategories();
@@ -1053,6 +1395,10 @@
                                         <div class="counter-display">${todayCount}</div>
                                         <button class="counter-btn" onclick="adjustActivityCount('${categoryKey}', '${activity.id}', 1)">+</button>
                                     </div>
+                                    <div class="activity-actions">
+                                        <button class="edit-btn" onclick="editActivity('${categoryKey}', '${activity.id}')">✏️</button>
+                                        <button class="delete-btn" onclick="deleteActivity('${categoryKey}', '${activity.id}')">🗑️</button>
+                                    </div>
                                     <div class="activity-points">${sign}${finalPoints}</div>
                                 </div>
                             </div>
@@ -1068,6 +1414,7 @@
                     <div class="activity-list" data-category="${categoryKey}">
                         ${activitiesHtml}
                     </div>
+                    <button class="btn-add" onclick="showAddModal('${categoryKey}')">+ Adicionar Atividade</button>
                 `;
                 
                 container.appendChild(categoryDiv);
@@ -1120,15 +1467,32 @@
                         </div>
                         <div>
                             <span>${sign}${finalPoints} pontos</span>
+                            <button class="remove-today-btn" onclick="removeTodayActivity('${activity.id}')">Remover</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
         
+        // Remove today activity
+        function removeTodayActivity(activityId) {
+            const childData = appData[currentChild];
+            const today = new Date().toISOString().split('T')[0];
+            
+            childData.todayActivities = childData.todayActivities.filter(a => 
+                !(a.id === activityId && a.date === today)
+            );
+            
+            forceSave();
+            updateDisplay();
+            showNotification('Atividade removida do dia!');
+        }
+        
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
-            // Load saved data
+            console.log('🚀 INICIANDO APLICAÇÃO...');
+            
+            // Load saved data FIRST
             loadData();
             
             // Child selector
@@ -1145,12 +1509,35 @@
                 });
             });
             
+            // Modal close on outside click
+            window.addEventListener('click', function(event) {
+                const editModal = document.getElementById('edit-modal');
+                const addModal = document.getElementById('add-modal');
+                
+                if (event.target === editModal) {
+                    closeEditModal();
+                }
+                if (event.target === addModal) {
+                    closeAddModal();
+                }
+            });
+            
+            // Auto-save on page unload
+            window.addEventListener('beforeunload', function() {
+                forceSave();
+            });
+            
+            // Periodic auto-save
+            setInterval(forceSave, 30000); // Save every 30 seconds
+            
             // Initialize display
             updateDisplay();
             
             // Update datetime every second
             setInterval(updateDateTime, 1000);
             updateDateTime();
+            
+            console.log('✅ APLICAÇÃO INICIADA COM SUCESSO!');
         });
     </script>
 </body>
