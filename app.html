@@ -970,17 +970,18 @@
         // Initialize Google Drive
         async function initializeGoogleDrive() {
             try {
-                updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
                 console.log('🔄 Iniciando carregamento do Google Drive...');
                 
-                // Aguardar o carregamento da API do Google com timeout
-                await new Promise((resolve, reject) => {
-                    const timeout = setTimeout(() => {
-                        reject(new Error('Timeout ao carregar Google API'));
-                    }, 10000); // 10 segundos timeout
+                // Verificar se a API já está disponível
+                if (typeof gapi === 'undefined') {
+                    console.log('📥 Google API não disponível, carregando...');
                     
-                    if (typeof gapi === 'undefined') {
-                        console.log('📥 Carregando Google API...');
+                    // Aguardar o carregamento da API do Google com timeout reduzido
+                    await new Promise((resolve, reject) => {
+                        const timeout = setTimeout(() => {
+                            reject(new Error('Timeout ao carregar Google API'));
+                        }, 5000); // 5 segundos timeout
+                        
                         const script = document.createElement('script');
                         script.src = 'https://apis.google.com/js/api.js';
                         script.onload = () => {
@@ -993,18 +994,19 @@
                         };
                         script.onerror = (error) => {
                             clearTimeout(timeout);
-                            reject(new Error('Erro ao carregar Google API: ' + error));
+                            reject(new Error('Erro ao carregar Google API'));
                         };
                         document.head.appendChild(script);
-                    } else {
-                        console.log('✅ Google API já disponível');
-                        clearTimeout(timeout);
+                    });
+                } else {
+                    console.log('✅ Google API já disponível');
+                    await new Promise((resolve) => {
                         gapi.load('auth2:client', () => {
                             console.log('✅ Auth2 e Client carregados');
                             resolve();
                         });
-                    }
-                });
+                    });
+                }
                 
                 console.log('🔧 Inicializando cliente Google...');
                 await gapi.client.init({
@@ -1033,11 +1035,10 @@
                 
             } catch (error) {
                 console.error('❌ Erro ao inicializar Google Drive:', error);
-                updateSyncStatus('disconnected', '❌ Erro na conexão - usando dados locais');
-                showNotification('Erro ao conectar com Google Drive. Usando dados locais.', 'error');
+                updateSyncStatus('disconnected', '🔗 Clique em "Conectar" para sincronizar');
                 
-                // Fallback to local storage
-                loadDataLocal();
+                // Não mostrar notificação de erro na inicialização
+                console.log('ℹ️ Sistema funcionando apenas com dados locais');
             }
         }        
         // Load Google Drive API
@@ -1979,22 +1980,15 @@
             updateChildSelector();
             updateDisplay();
             
-            // Initialize Google Drive when API is ready
-            if (typeof gapi !== 'undefined') {
-                initializeGoogleDrive();
-            } else {
-                // Wait for Google API to load
-                window.addEventListener('load', () => {
-                    setTimeout(() => {
-                        if (typeof gapi !== 'undefined') {
-                            initializeGoogleDrive();
-                        } else {
-                            console.log('⚠️ Google API não carregou, usando apenas dados locais');
-                            updateSyncStatus('disconnected', '❌ Google API não disponível');
-                        }
-                    }, 1000);
+            // Try to initialize Google Drive with timeout
+            updateSyncStatus('disconnected', '🔄 Carregando Google Drive...');
+            
+            setTimeout(() => {
+                initializeGoogleDrive().catch(error => {
+                    console.log('⚠️ Falha ao carregar Google Drive, usando dados locais:', error);
+                    updateSyncStatus('disconnected', '🔗 Clique em "Conectar" para sincronizar');
                 });
-            }
+            }, 2000); // Aguardar 2 segundos para a API carregar
             
             console.log('✅ Sistema inicializado');
         });
