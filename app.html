@@ -245,6 +245,7 @@
             display: flex;
             flex-direction: column;
             gap: 10px;
+            min-height: 100px;
         }
         
         .activity-item {
@@ -257,22 +258,38 @@
             cursor: move;
             transition: all 0.3s ease;
             position: relative;
+            user-select: none;
         }
         
         .activity-item:hover {
             background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
         }
         
         .activity-item.dragging {
             opacity: 0.5;
-            transform: rotate(5deg);
+            transform: rotate(5deg) scale(1.05);
+            z-index: 1000;
+        }
+        
+        .activity-item.drag-over {
+            border: 2px dashed rgba(255,255,255,0.5);
+            background: rgba(255,255,255,0.3);
         }
         
         .drag-handle {
             cursor: move;
-            color: rgba(255,255,255,0.7);
+            color: rgba(255,255,255,0.8);
             margin-right: 10px;
             font-weight: bold;
+            font-size: 16px;
+            padding: 5px;
+        }
+        
+        .drag-handle:hover {
+            color: white;
+            background: rgba(255,255,255,0.2);
+            border-radius: 4px;
         }
         
         .activity-content {
@@ -289,28 +306,27 @@
         
         .activity-controls {
             display: flex;
-            gap: 5px;
+            gap: 10px;
             align-items: center;
         }
         
         .activity-counter {
             background: rgba(255,255,255,0.2);
             border-radius: 20px;
-            padding: 2px;
+            padding: 5px;
             display: flex;
             align-items: center;
-            gap: 5px;
-            margin-right: 10px;
+            gap: 8px;
         }
         
         .counter-btn {
             background: rgba(255,255,255,0.3);
             border: none;
             border-radius: 50%;
-            width: 24px;
-            height: 24px;
+            width: 28px;
+            height: 28px;
             cursor: pointer;
-            font-size: 14px;
+            font-size: 16px;
             font-weight: bold;
             color: white;
             display: flex;
@@ -321,13 +337,15 @@
         
         .counter-btn:hover {
             background: rgba(255,255,255,0.5);
+            transform: scale(1.1);
         }
         
         .counter-display {
-            min-width: 20px;
+            min-width: 25px;
             text-align: center;
             font-weight: bold;
-            font-size: 12px;
+            font-size: 14px;
+            color: white;
         }
         
         .activity-actions {
@@ -339,9 +357,9 @@
             background: rgba(255,255,255,0.3);
             border: none;
             border-radius: 4px;
-            padding: 4px 8px;
+            padding: 6px 10px;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 14px;
             color: white;
             transition: all 0.3s ease;
         }
@@ -359,6 +377,7 @@
             font-size: 1.1rem;
             min-width: 60px;
             text-align: right;
+            color: white;
         }
         
         .multiplier-controls {
@@ -418,73 +437,6 @@
             background: #059669;
         }
         
-        .modal {
-            display: none;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.5);
-            z-index: 1000;
-        }
-        
-        .modal-content {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            width: 90%;
-            max-width: 500px;
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        
-        .modal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .modal-title {
-            font-size: 1.5rem;
-            font-weight: 700;
-        }
-        
-        .close-btn {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            color: #666;
-        }
-        
-        .form-group {
-            margin-bottom: 20px;
-        }
-        
-        .form-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-weight: 600;
-        }
-        
-        .form-group input, .form-group select {
-            width: 100%;
-            padding: 12px;
-            border: 2px solid #e1e5e9;
-            border-radius: 8px;
-            font-size: 16px;
-        }
-        
-        .hidden {
-            display: none;
-        }
-        
         .notification {
             position: fixed;
             top: 20px;
@@ -496,50 +448,19 @@
             z-index: 1001;
             transform: translateX(400px);
             transition: transform 0.3s ease;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.2);
         }
         
         .notification.show {
             transform: translateX(0);
         }
         
-        .reports-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
+        .notification.error {
+            background: #ef4444;
         }
         
-        .report-card {
-            background: #f8f9fa;
-            padding: 20px;
-            border-radius: 12px;
-            border-left: 4px solid #667eea;
-        }
-        
-        .report-card h3 {
-            margin-bottom: 15px;
-            color: #333;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        
-        .report-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 8px;
-        }
-        
-        .report-item.positive {
-            color: #10b981;
-        }
-        
-        .report-item.negative {
-            color: #ef4444;
-        }
-        
-        .report-item.neutral {
-            color: #6b7280;
+        .hidden {
+            display: none;
         }
         
         .activities-today {
@@ -688,141 +609,23 @@
                 </div>
             </div>
             
-            <!-- Expenses Tab -->
+            <!-- Other tabs content -->
             <div id="expenses-content" class="tab-content hidden">
                 <h2>💰 Controle de Gastos</h2>
-                <div class="expense-form">
-                    <input type="text" id="expense-desc" placeholder="Descrição do gasto">
-                    <input type="number" id="expense-amount" placeholder="Valor em pontos" min="1">
-                    <button class="btn btn-primary" onclick="addExpense()">Registrar Gasto</button>
-                </div>
-                <div id="expenses-list">
-                    <p>Nenhum gasto registrado</p>
-                </div>
+                <p>Funcionalidade em desenvolvimento...</p>
             </div>
             
-            <!-- Reports Tab -->
             <div id="reports-content" class="tab-content hidden">
-                <h2>📈 Relatórios e Estatísticas Detalhados</h2>
-                <div class="reports-grid">
-                    <div class="report-card">
-                        <h3>📅 Último Dia</h3>
-                        <div class="report-item positive">
-                            <span>Condutas Positivas:</span>
-                            <span id="day-positive">0</span>
-                        </div>
-                        <div class="report-item negative">
-                            <span>Condutas Negativas:</span>
-                            <span id="day-negative">0</span>
-                        </div>
-                        <div class="report-item neutral">
-                            <span>Resultado Líquido:</span>
-                            <span id="day-net">0</span>
-                        </div>
-                        <div class="report-item neutral">
-                            <span>Padrão de Conduta:</span>
-                            <span id="day-pattern">Regular</span>
-                        </div>
-                    </div>
-                    
-                    <div class="report-card">
-                        <h3>📊 Última Semana</h3>
-                        <div class="report-item positive">
-                            <span>Condutas Positivas:</span>
-                            <span id="week-positive">0</span>
-                        </div>
-                        <div class="report-item negative">
-                            <span>Condutas Negativas:</span>
-                            <span id="week-negative">0</span>
-                        </div>
-                        <div class="report-item neutral">
-                            <span>Resultado Líquido:</span>
-                            <span id="week-net">0</span>
-                        </div>
-                        <div class="report-item neutral">
-                            <span>Padrão de Conduta:</span>
-                            <span id="week-pattern">Regular</span>
-                        </div>
-                    </div>
-                    
-                    <div class="report-card">
-                        <h3>📈 Último Mês</h3>
-                        <div class="report-item positive">
-                            <span>Condutas Positivas:</span>
-                            <span id="month-positive">0</span>
-                        </div>
-                        <div class="report-item negative">
-                            <span>Condutas Negativas:</span>
-                            <span id="month-negative">0</span>
-                        </div>
-                        <div class="report-item neutral">
-                            <span>Resultado Líquido:</span>
-                            <span id="month-net">0</span>
-                        </div>
-                        <div class="report-item neutral">
-                            <span>Padrão de Conduta:</span>
-                            <span id="month-pattern">Regular</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h3>Média Diária (7 dias)</h3>
-                        <div class="value" id="daily-average">0</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Melhor Dia</h3>
-                        <div class="value" id="best-day">-</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Total Ganho</h3>
-                        <div class="value" id="total-earned">R$ 0,00</div>
-                    </div>
-                    <div class="stat-card">
-                        <h3>Total Gasto</h3>
-                        <div class="value" id="total-spent">R$ 0,00</div>
-                    </div>
-                </div>
+                <h2>📈 Relatórios</h2>
+                <p>Funcionalidade em desenvolvimento...</p>
             </div>
             
-            <!-- Settings Tab -->
             <div id="settings-content" class="tab-content hidden">
                 <h2>⚙️ Configurações</h2>
-                <button class="btn btn-primary" onclick="showAddActivityModal()">Adicionar Nova Atividade</button>
                 <button class="btn btn-success" onclick="exportData()">Exportar Dados</button>
                 <button class="btn btn-primary" onclick="importData()">Importar Dados</button>
                 <input type="file" id="import-file" accept=".json" style="display: none;" onchange="handleImport(event)">
             </div>
-        </div>
-    </div>
-    
-    <!-- Modal for Adding/Editing Activities -->
-    <div id="activity-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2 class="modal-title" id="modal-title">Adicionar Atividade</h2>
-                <button class="close-btn" onclick="closeModal()">&times;</button>
-            </div>
-            <div class="form-group">
-                <label>Nome da Atividade:</label>
-                <input type="text" id="activity-name" placeholder="Ex: Escovar os dentes">
-            </div>
-            <div class="form-group">
-                <label>Pontos Base:</label>
-                <input type="number" id="activity-points" placeholder="Ex: 1" min="-100" max="100">
-            </div>
-            <div class="form-group">
-                <label>Categoria:</label>
-                <select id="activity-category">
-                    <option value="positive">Positivos</option>
-                    <option value="special">Especiais</option>
-                    <option value="negative">Negativos</option>
-                    <option value="grave">Graves</option>
-                </select>
-            </div>
-            <button class="btn btn-success" onclick="saveActivity()">Salvar</button>
-            <button class="btn" onclick="closeModal()">Cancelar</button>
         </div>
     </div>
     
@@ -833,29 +636,10 @@
         // Global variables
         let currentChild = 'luiza';
         let currentTab = 'dashboard';
-        let editingActivityId = null;
         let draggedElement = null;
+        let draggedFromCategory = null;
         
-        // Data structure
-        const defaultData = {
-            luiza: {
-                saldoInicial: 0,
-                dataInicio: null,
-                activities: [],
-                expenses: [],
-                todayActivities: [],
-                multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
-            },
-            miguel: {
-                saldoInicial: 0,
-                dataInicio: null,
-                activities: [],
-                expenses: [],
-                todayActivities: [],
-                multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
-            }
-        };
-        
+        // Data structure with default activities
         const defaultActivities = {
             positive: [
                 { id: 'pos1', name: 'Escovar os dentes', points: 1, count: 0 },
@@ -879,52 +663,53 @@
             ]
         };
         
+        // Initialize app data
+        let appData = {
+            luiza: {
+                saldoInicial: 0,
+                dataInicio: null,
+                activities: JSON.parse(JSON.stringify(defaultActivities)),
+                todayActivities: [],
+                multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
+            },
+            miguel: {
+                saldoInicial: 0,
+                dataInicio: null,
+                activities: JSON.parse(JSON.stringify(defaultActivities)),
+                todayActivities: [],
+                multipliers: { positive: 1, special: 50, negative: 1, grave: 100 }
+            }
+        };
+        
         // Load data from localStorage
         function loadData() {
-            const saved = localStorage.getItem('kidsPointsSystem');
-            if (saved) {
-                try {
+            try {
+                const saved = localStorage.getItem('kidsPointsSystem');
+                if (saved) {
                     const data = JSON.parse(saved);
-                    return { ...defaultData, ...data };
-                } catch (e) {
-                    console.error('Error loading data:', e);
-                    return initializeDefaultData();
+                    // Merge with default structure to ensure all properties exist
+                    appData.luiza = { ...appData.luiza, ...data.luiza };
+                    appData.miguel = { ...appData.miguel, ...data.miguel };
+                    console.log('Dados carregados:', appData);
+                    showNotification('Dados carregados com sucesso!');
                 }
+            } catch (e) {
+                console.error('Erro ao carregar dados:', e);
+                showNotification('Erro ao carregar dados, usando padrões', 'error');
             }
-            return initializeDefaultData();
-        }
-        
-        function initializeDefaultData() {
-            const data = JSON.parse(JSON.stringify(defaultData));
-            Object.keys(defaultActivities).forEach(category => {
-                data.luiza.activities = data.luiza.activities || [];
-                data.miguel.activities = data.miguel.activities || [];
-                
-                defaultActivities[category].forEach(activity => {
-                    if (!data.luiza.activities.find(a => a.id === activity.id)) {
-                        data.luiza.activities.push({ ...activity, category });
-                    }
-                    if (!data.miguel.activities.find(a => a.id === activity.id)) {
-                        data.miguel.activities.push({ ...activity, category });
-                    }
-                });
-            });
-            return data;
         }
         
         // Save data to localStorage
         function saveData() {
             try {
                 localStorage.setItem('kidsPointsSystem', JSON.stringify(appData));
-                console.log('Data saved successfully');
+                console.log('Dados salvos:', appData);
+                showNotification('Dados salvos automaticamente!');
             } catch (e) {
-                console.error('Error saving data:', e);
+                console.error('Erro ao salvar dados:', e);
                 showNotification('Erro ao salvar dados!', 'error');
             }
         }
-        
-        // Initialize app data
-        let appData = loadData();
         
         // Update datetime display
         function updateDateTime() {
@@ -962,7 +747,6 @@
             document.querySelector(`[data-child="${child}"]`).classList.add('active');
             
             updateDisplay();
-            saveData();
         }
         
         // Switch tab
@@ -1007,12 +791,15 @@
             const childData = appData[child];
             let total = childData.saldoInicial || 0;
             
+            const today = new Date().toISOString().split('T')[0];
             childData.todayActivities.forEach(activity => {
-                const multiplier = childData.multipliers[activity.category] || 1;
-                if (activity.category === 'negative' || activity.category === 'grave') {
-                    total -= activity.points * multiplier * activity.count;
-                } else {
-                    total += activity.points * multiplier * activity.count;
+                if (activity.date === today) {
+                    const multiplier = childData.multipliers[activity.category] || 1;
+                    if (activity.category === 'negative' || activity.category === 'grave') {
+                        total -= activity.points * multiplier * activity.count;
+                    } else {
+                        total += activity.points * multiplier * activity.count;
+                    }
                 }
             });
             
@@ -1020,9 +807,9 @@
         }
         
         // Add/remove activity count
-        function adjustActivityCount(activityId, change) {
+        function adjustActivityCount(categoryKey, activityId, change) {
             const childData = appData[currentChild];
-            const activity = childData.activities.find(a => a.id === activityId);
+            const activity = childData.activities[categoryKey].find(a => a.id === activityId);
             
             if (!activity) return;
             
@@ -1039,7 +826,7 @@
                     id: activityId,
                     name: activity.name,
                     points: activity.points,
-                    category: activity.category,
+                    category: categoryKey,
                     count: 0,
                     date: today,
                     time: now.toLocaleTimeString('pt-BR')
@@ -1076,99 +863,6 @@
             showNotification('Multiplicadores atualizados!');
         }
         
-        // Show add activity modal
-        function showAddActivityModal() {
-            editingActivityId = null;
-            document.getElementById('modal-title').textContent = 'Adicionar Atividade';
-            document.getElementById('activity-name').value = '';
-            document.getElementById('activity-points').value = '';
-            document.getElementById('activity-category').value = 'positive';
-            document.getElementById('activity-modal').style.display = 'block';
-        }
-        
-        // Show edit activity modal
-        function showEditActivityModal(activityId) {
-            const activity = appData[currentChild].activities.find(a => a.id === activityId);
-            if (!activity) return;
-            
-            editingActivityId = activityId;
-            document.getElementById('modal-title').textContent = 'Editar Atividade';
-            document.getElementById('activity-name').value = activity.name;
-            document.getElementById('activity-points').value = activity.points;
-            document.getElementById('activity-category').value = activity.category;
-            document.getElementById('activity-modal').style.display = 'block';
-        }
-        
-        // Save activity
-        function saveActivity() {
-            const name = document.getElementById('activity-name').value.trim();
-            const points = parseInt(document.getElementById('activity-points').value) || 1;
-            const category = document.getElementById('activity-category').value;
-            
-            if (!name) {
-                showNotification('Por favor, insira um nome para a atividade!', 'error');
-                return;
-            }
-            
-            const childData = appData[currentChild];
-            
-            if (editingActivityId) {
-                // Edit existing activity
-                const activity = childData.activities.find(a => a.id === editingActivityId);
-                if (activity) {
-                    activity.name = name;
-                    activity.points = points;
-                    activity.category = category;
-                }
-            } else {
-                // Add new activity
-                const newActivity = {
-                    id: 'custom_' + Date.now(),
-                    name: name,
-                    points: points,
-                    category: category,
-                    count: 0
-                };
-                childData.activities.push(newActivity);
-            }
-            
-            saveData();
-            updateDisplay();
-            closeModal();
-            showNotification(editingActivityId ? 'Atividade editada!' : 'Atividade adicionada!');
-        }
-        
-        // Delete activity
-        function deleteActivity(activityId) {
-            if (confirm('Tem certeza que deseja excluir esta atividade?')) {
-                const childData = appData[currentChild];
-                const index = childData.activities.findIndex(a => a.id === activityId);
-                if (index > -1) {
-                    childData.activities.splice(index, 1);
-                    saveData();
-                    updateDisplay();
-                    showNotification('Atividade excluída!');
-                }
-            }
-        }
-        
-        // Remove today activity
-        function removeTodayActivity(activityId, date) {
-            const childData = appData[currentChild];
-            const index = childData.todayActivities.findIndex(a => a.id === activityId && a.date === date);
-            if (index > -1) {
-                childData.todayActivities.splice(index, 1);
-                saveData();
-                updateDisplay();
-                showNotification('Atividade do dia removida!');
-            }
-        }
-        
-        // Close modal
-        function closeModal() {
-            document.getElementById('activity-modal').style.display = 'none';
-        }
-        
         // Export data
         function exportData() {
             const dataStr = JSON.stringify(appData, null, 2);
@@ -1195,7 +889,7 @@
             reader.onload = function(e) {
                 try {
                     const importedData = JSON.parse(e.target.result);
-                    appData = { ...defaultData, ...importedData };
+                    appData = { ...appData, ...importedData };
                     saveData();
                     updateDisplay();
                     showNotification('Dados importados com sucesso!');
@@ -1207,74 +901,75 @@
         }
         
         // Drag and drop functionality
-        function enableDragAndDrop() {
-            const activityItems = document.querySelectorAll('.activity-item');
+        function setupDragAndDrop() {
+            const activityLists = document.querySelectorAll('.activity-list');
             
-            activityItems.forEach(item => {
-                item.draggable = true;
-                
-                item.addEventListener('dragstart', function(e) {
-                    draggedElement = this;
-                    this.classList.add('dragging');
-                    e.dataTransfer.effectAllowed = 'move';
-                });
-                
-                item.addEventListener('dragend', function(e) {
-                    this.classList.remove('dragging');
-                    draggedElement = null;
-                });
-                
-                item.addEventListener('dragover', function(e) {
+            activityLists.forEach(list => {
+                list.addEventListener('dragover', function(e) {
                     e.preventDefault();
                     e.dataTransfer.dropEffect = 'move';
+                    
+                    if (draggedElement) {
+                        this.classList.add('drag-over');
+                    }
                 });
                 
-                item.addEventListener('drop', function(e) {
+                list.addEventListener('dragleave', function(e) {
+                    this.classList.remove('drag-over');
+                });
+                
+                list.addEventListener('drop', function(e) {
                     e.preventDefault();
+                    this.classList.remove('drag-over');
                     
-                    if (draggedElement && draggedElement !== this) {
-                        const container = this.parentNode;
-                        const draggedCategory = draggedElement.dataset.category;
+                    if (draggedElement) {
                         const targetCategory = this.dataset.category;
+                        const draggedActivityId = draggedElement.dataset.activityId;
                         
-                        if (draggedCategory === targetCategory) {
-                            // Reorder within same category
-                            const draggedIndex = Array.from(container.children).indexOf(draggedElement);
-                            const targetIndex = Array.from(container.children).indexOf(this);
-                            
-                            if (draggedIndex < targetIndex) {
-                                container.insertBefore(draggedElement, this.nextSibling);
-                            } else {
-                                container.insertBefore(draggedElement, this);
-                            }
-                            
-                            // Update data order
-                            const childData = appData[currentChild];
-                            const categoryActivities = childData.activities.filter(a => a.category === draggedCategory);
-                            const draggedActivity = categoryActivities[draggedIndex];
-                            categoryActivities.splice(draggedIndex, 1);
-                            categoryActivities.splice(targetIndex, 0, draggedActivity);
-                            
-                            // Update activities array
-                            childData.activities = childData.activities.filter(a => a.category !== draggedCategory);
-                            childData.activities.push(...categoryActivities);
-                            
-                            saveData();
-                            showNotification('Ordem das atividades atualizada!');
-                        }
+                        // Move activity between categories or reorder within same category
+                        moveActivity(draggedFromCategory, targetCategory, draggedActivityId, this);
                     }
                 });
             });
         }
         
-        // Calculate behavior pattern
-        function calculatePattern(points) {
-            if (points >= 50) return 'Excelente';
-            if (points >= 20) return 'Muito Bom';
-            if (points >= 5) return 'Bom';
-            if (points >= 0) return 'Regular';
-            if (points >= -10) return 'Precisa Melhorar';
-            return 'Crítico';
+        function moveActivity(fromCategory, toCategory, activityId, targetList) {
+            const childData = appData[currentChild];
+            
+            // Find the activity
+            const activityIndex = childData.activities[fromCategory].findIndex(a => a.id === activityId);
+            if (activityIndex === -1) return;
+            
+            const activity = childData.activities[fromCategory][activityIndex];
+            
+            if (fromCategory === toCategory) {
+                // Reordering within same category
+                const targetItems = Array.from(targetList.children);
+                const draggedIndex = targetItems.indexOf(draggedElement);
+                let targetIndex = targetItems.length;
+                
+                // Find drop position
+                for (let i = 0; i < targetItems.length; i++) {
+                    const rect = targetItems[i].getBoundingClientRect();
+                    const midY = rect.top + rect.height / 2;
+                    if (event.clientY < midY) {
+                        targetIndex = i;
+                        break;
+                    }
+                }
+                
+                // Reorder in data
+                childData.activities[fromCategory].splice(activityIndex, 1);
+                childData.activities[fromCategory].splice(targetIndex > draggedIndex ? targetIndex - 1 : targetIndex, 0, activity);
+            } else {
+                // Moving between categories
+                childData.activities[fromCategory].splice(activityIndex, 1);
+                childData.activities[toCategory].push(activity);
+            }
+            
+            saveData();
+            updateDisplay();
+            showNotification(`Atividade "${activity.name}" movida com sucesso!`);
         }
         
         // Update display
@@ -1310,11 +1005,8 @@
             // Update today's activities
             updateTodayActivities();
             
-            // Update reports
-            updateReports();
-            
-            // Enable drag and drop
-            setTimeout(enableDragAndDrop, 100);
+            // Setup drag and drop after DOM update
+            setTimeout(setupDragAndDrop, 100);
         }
         
         // Update categories display
@@ -1333,50 +1025,73 @@
             
             Object.keys(categories).forEach(categoryKey => {
                 const category = categories[categoryKey];
-                const activities = childData.activities.filter(a => a.category === categoryKey);
+                const activities = childData.activities[categoryKey] || [];
                 
                 const categoryDiv = document.createElement('div');
                 categoryDiv.className = `category-card ${category.class}`;
+                
+                const activitiesHtml = activities.map(activity => {
+                    const today = new Date().toISOString().split('T')[0];
+                    const todayCount = childData.todayActivities
+                        .filter(ta => ta.id === activity.id && ta.date === today)
+                        .reduce((sum, ta) => sum + ta.count, 0);
+                    
+                    const finalPoints = activity.points * category.multiplier;
+                    const sign = categoryKey === 'negative' || categoryKey === 'grave' ? '-' : '+';
+                    
+                    return `
+                        <div class="activity-item" 
+                             draggable="true" 
+                             data-activity-id="${activity.id}"
+                             data-category="${categoryKey}">
+                            <div class="drag-handle">⋮⋮</div>
+                            <div class="activity-content">
+                                <div class="activity-name">${activity.name}</div>
+                                <div class="activity-controls">
+                                    <div class="activity-counter">
+                                        <button class="counter-btn" onclick="adjustActivityCount('${categoryKey}', '${activity.id}', -1)">-</button>
+                                        <div class="counter-display">${todayCount}</div>
+                                        <button class="counter-btn" onclick="adjustActivityCount('${categoryKey}', '${activity.id}', 1)">+</button>
+                                    </div>
+                                    <div class="activity-points">${sign}${finalPoints}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
                 
                 categoryDiv.innerHTML = `
                     <div class="category-header">
                         <div class="category-title">${category.title}</div>
                         <div class="category-multiplier">x${category.multiplier}</div>
                     </div>
-                    <div class="activity-list">
-                        ${activities.map(activity => {
-                            const todayCount = childData.todayActivities
-                                .filter(ta => ta.id === activity.id && ta.date === new Date().toISOString().split('T')[0])
-                                .reduce((sum, ta) => sum + ta.count, 0);
-                            
-                            const finalPoints = activity.points * category.multiplier;
-                            const sign = categoryKey === 'negative' || categoryKey === 'grave' ? '-' : '+';
-                            
-                            return `
-                                <div class="activity-item" data-category="${categoryKey}" data-id="${activity.id}">
-                                    <div class="drag-handle">⋮⋮</div>
-                                    <div class="activity-content">
-                                        <div class="activity-name">${activity.name}</div>
-                                        <div class="activity-controls">
-                                            <div class="activity-counter">
-                                                <button class="counter-btn" onclick="adjustActivityCount('${activity.id}', -1)">-</button>
-                                                <div class="counter-display">${todayCount}</div>
-                                                <button class="counter-btn" onclick="adjustActivityCount('${activity.id}', 1)">+</button>
-                                            </div>
-                                            <div class="activity-actions">
-                                                <button class="edit-btn" onclick="showEditActivityModal('${activity.id}')">✏️</button>
-                                                <button class="delete-btn" onclick="deleteActivity('${activity.id}')">🗑️</button>
-                                            </div>
-                                            <div class="activity-points">${sign}${finalPoints}</div>
-                                        </div>
-                                    </div>
-                                </div>
-                            `;
-                        }).join('')}
+                    <div class="activity-list" data-category="${categoryKey}">
+                        ${activitiesHtml}
                     </div>
                 `;
                 
                 container.appendChild(categoryDiv);
+            });
+            
+            // Add drag event listeners to activity items
+            document.querySelectorAll('.activity-item').forEach(item => {
+                item.addEventListener('dragstart', function(e) {
+                    draggedElement = this;
+                    draggedFromCategory = this.dataset.category;
+                    this.classList.add('dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+                
+                item.addEventListener('dragend', function(e) {
+                    this.classList.remove('dragging');
+                    draggedElement = null;
+                    draggedFromCategory = null;
+                    
+                    // Remove drag-over class from all lists
+                    document.querySelectorAll('.activity-list').forEach(list => {
+                        list.classList.remove('drag-over');
+                    });
+                });
             });
         }
         
@@ -1405,61 +1120,17 @@
                         </div>
                         <div>
                             <span>${sign}${finalPoints} pontos</span>
-                            <button class="remove-today-btn" onclick="removeTodayActivity('${activity.id}', '${activity.date}')">🗑️</button>
                         </div>
                     </div>
                 `;
             }).join('');
         }
         
-        // Update reports
-        function updateReports() {
-            const childData = appData[currentChild];
-            const now = new Date();
-            
-            // Calculate periods
-            const today = now.toISOString().split('T')[0];
-            const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            
-            // Day report
-            const dayActivities = childData.todayActivities.filter(a => a.date === today);
-            const dayPositive = dayActivities.filter(a => a.category === 'positive' || a.category === 'special')
-                .reduce((sum, a) => sum + (a.points * childData.multipliers[a.category] * a.count), 0);
-            const dayNegative = dayActivities.filter(a => a.category === 'negative' || a.category === 'grave')
-                .reduce((sum, a) => sum + (a.points * childData.multipliers[a.category] * a.count), 0);
-            const dayNet = dayPositive - dayNegative;
-            
-            document.getElementById('day-positive').textContent = dayPositive;
-            document.getElementById('day-negative').textContent = dayNegative;
-            document.getElementById('day-net').textContent = dayNet;
-            document.getElementById('day-pattern').textContent = calculatePattern(dayNet);
-            
-            // Week report (simplified - same as day for now)
-            document.getElementById('week-positive').textContent = dayPositive;
-            document.getElementById('week-negative').textContent = dayNegative;
-            document.getElementById('week-net').textContent = dayNet;
-            document.getElementById('week-pattern').textContent = calculatePattern(dayNet);
-            
-            // Month report (simplified - same as day for now)
-            document.getElementById('month-positive').textContent = dayPositive;
-            document.getElementById('month-negative').textContent = dayNegative;
-            document.getElementById('month-net').textContent = dayNet;
-            document.getElementById('month-pattern').textContent = calculatePattern(dayNet);
-            
-            // Update other stats
-            document.getElementById('daily-average').textContent = Math.round(dayNet / 7);
-            document.getElementById('best-day').textContent = dayNet > 0 ? 'Hoje' : '-';
-            document.getElementById('total-earned').textContent = `R$ ${(dayPositive * 0.01).toFixed(2)}`;
-            document.getElementById('total-spent').textContent = `R$ ${(dayNegative * 0.01).toFixed(2)}`;
-            
-            // Update month stats in dashboard
-            document.getElementById('month-points').textContent = dayNet;
-            document.getElementById('month-expenses').textContent = `R$ ${(dayNegative * 0.01).toFixed(2)}`;
-        }
-        
         // Event listeners
         document.addEventListener('DOMContentLoaded', function() {
+            // Load saved data
+            loadData();
+            
             // Child selector
             document.querySelectorAll('.child-tab').forEach(tab => {
                 tab.addEventListener('click', function() {
@@ -1472,13 +1143,6 @@
                 tab.addEventListener('click', function() {
                     switchTab(this.dataset.tab);
                 });
-            });
-            
-            // Modal close on outside click
-            document.getElementById('activity-modal').addEventListener('click', function(e) {
-                if (e.target === this) {
-                    closeModal();
-                }
             });
             
             // Initialize display
