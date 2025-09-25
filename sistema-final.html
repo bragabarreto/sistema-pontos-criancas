@@ -1,0 +1,817 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema de Pontuação - Luiza e Miguel</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+        }
+        
+        .datetime-display {
+            background: rgba(255,255,255,0.1);
+            color: white;
+            padding: 10px 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+            font-weight: 600;
+        }
+        
+        .child-selector {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .child-btn {
+            flex: 1;
+            padding: 15px;
+            border: none;
+            border-radius: 15px;
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .child-btn.luiza {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+        }
+        
+        .child-btn.miguel {
+            background: linear-gradient(135deg, #2196F3, #1976D2);
+            color: white;
+        }
+        
+        .child-btn.active {
+            transform: scale(1.05);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+        }
+        
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .tab {
+            padding: 12px 20px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            flex: 1;
+            min-width: 120px;
+        }
+        
+        .tab.active {
+            background: rgba(255,255,255,0.9);
+            color: #333;
+        }
+        
+        .content {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            padding: 20px;
+            border-radius: 15px;
+            text-align: center;
+        }
+        
+        .stat-card h3 {
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+            opacity: 0.9;
+        }
+        
+        .stat-card .value {
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        
+        .config-section {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .config-section h3 {
+            margin-bottom: 15px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .activities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+        
+        .activity-category {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 15px;
+        }
+        
+        .activity-category h4 {
+            margin-bottom: 15px;
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+            color: white;
+            font-weight: 600;
+        }
+        
+        .positivos h4 { background: #4CAF50; }
+        .especiais h4 { background: #FF9800; }
+        .negativos h4 { background: #2196F3; }
+        .graves h4 { background: #F44336; }
+        
+        .activity-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        
+        .activity-controls {
+            display: flex;
+            gap: 5px;
+        }
+        
+        .activity-btn {
+            width: 30px;
+            height: 30px;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-minus { background: #f44336; color: white; }
+        .btn-plus { background: #4CAF50; color: white; }
+        
+        .hidden {
+            display: none;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 20px;
+            background: #4CAF50;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+            z-index: 1000;
+            transform: translateX(400px);
+            transition: transform 0.3s ease;
+        }
+        
+        .notification.show {
+            transform: translateX(0);
+        }
+        
+        .notification.error {
+            background: #f44336;
+        }
+        
+        .today-activities {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 20px;
+        }
+        
+        .today-activities h4 {
+            margin-bottom: 10px;
+            color: #1976d2;
+        }
+        
+        .today-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px;
+            background: white;
+            border-radius: 5px;
+            margin-bottom: 5px;
+        }
+        
+        .remove-btn {
+            background: #f44336;
+            color: white;
+            border: none;
+            padding: 4px 8px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🏆 Sistema de Pontuação</h1>
+            <p>Luiza e Miguel - Incentivando bons comportamentos!</p>
+        </div>
+        
+        <div class="datetime-display" id="datetime"></div>
+        
+        <div class="child-selector">
+            <button class="child-btn luiza active" onclick="selectChild('luiza')">
+                👧 Luiza
+            </button>
+            <button class="child-btn miguel" onclick="selectChild('miguel')">
+                👦 Miguel
+            </button>
+        </div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('dashboard')">📊 Dashboard</button>
+            <button class="tab" onclick="showTab('activities')">🎯 Atividades</button>
+            <button class="tab" onclick="showTab('config')">⚙️ Configurações</button>
+        </div>
+        
+        <div class="content">
+            <!-- Dashboard Tab -->
+            <div id="dashboard-tab" class="tab-content">
+                <div class="config-section">
+                    <h3>🔧 Configuração de Saldo Inicial</h3>
+                    <div style="display: flex; gap: 20px; align-items: end; flex-wrap: wrap;">
+                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                            <label>Saldo Inicial (pontos):</label>
+                            <input type="number" id="initial-balance" placeholder="Ex: 100">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 200px;">
+                            <label>Data de Início:</label>
+                            <input type="date" id="start-date">
+                        </div>
+                        <button class="btn" onclick="setInitialBalance()">Definir Saldo Inicial</button>
+                    </div>
+                    <div id="config-status" style="margin-top: 15px; padding: 10px; background: #e3f2fd; border-radius: 8px;">
+                        <strong>Status:</strong> <span id="status-text">Não configurado</span>
+                    </div>
+                </div>
+                
+                <div class="dashboard-grid">
+                    <div class="stat-card">
+                        <h3>Pontos Totais</h3>
+                        <div class="value" id="total-points">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Saldo Disponível</h3>
+                        <div class="value" id="available-balance">R$ 0,00</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Pontos Este Mês</h3>
+                        <div class="value" id="month-points">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <h3>Gastos Este Mês</h3>
+                        <div class="value" id="month-expenses">R$ 0,00</div>
+                    </div>
+                </div>
+                
+                <div class="today-activities">
+                    <h4>📅 Atividades de Hoje</h4>
+                    <div id="today-list">
+                        <p>Nenhuma atividade registrada hoje</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Activities Tab -->
+            <div id="activities-tab" class="tab-content hidden">
+                <div class="activities-grid">
+                    <div class="activity-category positivos">
+                        <h4>Positivos (x1)</h4>
+                        <div id="positivos-list">
+                            <div class="activity-item">
+                                <span>Escovar os dentes</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Escovar os dentes', -1)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Escovar os dentes', 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span>Arrumar a cama</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Arrumar a cama', -1)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Arrumar a cama', 1)">+</button>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span>Fazer lição de casa</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Fazer lição de casa', -1)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Fazer lição de casa', 1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-category especiais">
+                        <h4>Especiais (x50)</h4>
+                        <div id="especiais-list">
+                            <div class="activity-item">
+                                <span>Ajudar em casa</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Ajudar em casa', -50)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Ajudar em casa', 50)">+</button>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span>Nota boa na escola</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Nota boa na escola', -50)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Nota boa na escola', 50)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-category negativos">
+                        <h4>Negativos (x1)</h4>
+                        <div id="negativos-list">
+                            <div class="activity-item">
+                                <span>Não escovar os dentes</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Não escovar os dentes', 1)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Não escovar os dentes', -1)">+</button>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span>Bagunçar o quarto</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Bagunçar o quarto', 1)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Bagunçar o quarto', -1)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="activity-category graves">
+                        <h4>Graves (x100)</h4>
+                        <div id="graves-list">
+                            <div class="activity-item">
+                                <span>Desobedecer</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Desobedecer', 100)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Desobedecer', -100)">+</button>
+                                </div>
+                            </div>
+                            <div class="activity-item">
+                                <span>Mentir</span>
+                                <div class="activity-controls">
+                                    <button class="activity-btn btn-minus" onclick="addActivity('Mentir', 100)">-</button>
+                                    <button class="activity-btn btn-plus" onclick="addActivity('Mentir', -100)">+</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Config Tab -->
+            <div id="config-tab" class="tab-content hidden">
+                <div class="config-section">
+                    <h3>⚙️ Configurações do Sistema</h3>
+                    <p>Sistema funcionando com dados locais (localStorage)</p>
+                    <p><strong>Dados salvos automaticamente</strong> - não é necessário sincronização externa</p>
+                    
+                    <div style="margin-top: 20px;">
+                        <button class="btn" onclick="exportData()">📥 Exportar Dados</button>
+                        <button class="btn" onclick="resetData()" style="background: #f44336; margin-left: 10px;">🗑️ Resetar Sistema</button>
+                    </div>
+                    
+                    <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
+                        <h4>📊 Estatísticas do Sistema</h4>
+                        <p id="system-stats">Carregando...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        // Global variables
+        let currentChild = 'luiza';
+        let currentTab = 'dashboard';
+        let systemData = {
+            luiza: {
+                initialBalance: 0,
+                startDate: null,
+                totalPoints: 0,
+                activities: []
+            },
+            miguel: {
+                initialBalance: 0,
+                startDate: null,
+                totalPoints: 0,
+                activities: []
+            }
+        };
+        
+        // Initialize system
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Sistema iniciando...');
+            loadData();
+            updateDateTime();
+            updateDisplay();
+            
+            // Update datetime every second
+            setInterval(updateDateTime, 1000);
+            
+            console.log('✅ Sistema inicializado com sucesso!');
+            showNotification('Sistema carregado com sucesso!');
+        });
+        
+        // Update date and time display
+        function updateDateTime() {
+            const now = new Date();
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            };
+            document.getElementById('datetime').textContent = now.toLocaleDateString('pt-BR', options);
+        }
+        
+        // Load data from localStorage
+        function loadData() {
+            try {
+                const saved = localStorage.getItem('kidsPointsSystem');
+                if (saved) {
+                    systemData = JSON.parse(saved);
+                    console.log('📂 Dados carregados:', systemData);
+                } else {
+                    console.log('📝 Iniciando com dados padrão');
+                }
+            } catch (error) {
+                console.error('❌ Erro ao carregar dados:', error);
+                showNotification('Erro ao carregar dados', 'error');
+            }
+        }
+        
+        // Save data to localStorage
+        function saveData() {
+            try {
+                localStorage.setItem('kidsPointsSystem', JSON.stringify(systemData));
+                console.log('💾 Dados salvos:', systemData);
+            } catch (error) {
+                console.error('❌ Erro ao salvar dados:', error);
+                showNotification('Erro ao salvar dados', 'error');
+            }
+        }
+        
+        // Select child
+        function selectChild(child) {
+            console.log('👶 Selecionando criança:', child);
+            currentChild = child;
+            
+            // Update button states
+            document.querySelectorAll('.child-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            document.querySelector(`.child-btn.${child}`).classList.add('active');
+            
+            updateDisplay();
+            showNotification(`${child === 'luiza' ? 'Luiza' : 'Miguel'} selecionado(a)`);
+        }
+        
+        // Show tab
+        function showTab(tab) {
+            console.log('📋 Mostrando aba:', tab);
+            currentTab = tab;
+            
+            // Update tab buttons
+            document.querySelectorAll('.tab').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide tab content
+            document.querySelectorAll('.tab-content').forEach(content => {
+                content.classList.add('hidden');
+            });
+            document.getElementById(`${tab}-tab`).classList.remove('hidden');
+            
+            updateDisplay();
+        }
+        
+        // Set initial balance
+        function setInitialBalance() {
+            console.log('⚙️ Definindo saldo inicial...');
+            
+            const balance = parseInt(document.getElementById('initial-balance').value) || 0;
+            const date = document.getElementById('start-date').value;
+            
+            if (balance <= 0) {
+                showNotification('Por favor, insira um saldo inicial válido', 'error');
+                return;
+            }
+            
+            if (!date) {
+                showNotification('Por favor, selecione uma data de início', 'error');
+                return;
+            }
+            
+            systemData[currentChild].initialBalance = balance;
+            systemData[currentChild].startDate = date;
+            systemData[currentChild].totalPoints = balance;
+            
+            saveData();
+            updateDisplay();
+            showNotification(`✅ Saldo inicial de ${balance} pontos definido para ${currentChild === 'luiza' ? 'Luiza' : 'Miguel'}!`);
+            
+            console.log('✅ Saldo inicial definido:', { child: currentChild, balance, date });
+        }
+        
+        // Add activity
+        function addActivity(activityName, points) {
+            console.log('🎯 Adicionando atividade:', { activityName, points, child: currentChild });
+            
+            const today = new Date().toISOString().split('T')[0];
+            
+            systemData[currentChild].totalPoints += points;
+            systemData[currentChild].activities.push({
+                name: activityName,
+                points: points,
+                date: today,
+                timestamp: new Date().toISOString()
+            });
+            
+            saveData();
+            updateDisplay();
+            
+            const action = points > 0 ? 'ganhou' : 'perdeu';
+            const absPoints = Math.abs(points);
+            const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
+            showNotification(`${childName} ${action} ${absPoints} pontos por: ${activityName}`);
+        }
+        
+        // Remove today activity
+        function removeTodayActivity(index) {
+            console.log('🗑️ Removendo atividade do dia:', index);
+            
+            const today = new Date().toISOString().split('T')[0];
+            const todayActivities = systemData[currentChild].activities.filter(a => a.date === today);
+            
+            if (todayActivities[index]) {
+                const activity = todayActivities[index];
+                systemData[currentChild].totalPoints -= activity.points;
+                
+                // Remove from activities array
+                const activityIndex = systemData[currentChild].activities.findIndex(a => 
+                    a.timestamp === activity.timestamp
+                );
+                if (activityIndex > -1) {
+                    systemData[currentChild].activities.splice(activityIndex, 1);
+                }
+                
+                saveData();
+                updateDisplay();
+                showNotification('Atividade removida!');
+            }
+        }
+        
+        // Update display
+        function updateDisplay() {
+            const data = systemData[currentChild];
+            
+            // Update dashboard
+            document.getElementById('total-points').textContent = data.totalPoints;
+            document.getElementById('available-balance').textContent = `R$ ${(data.totalPoints * 0.01).toFixed(2)}`;
+            
+            // Calculate month points
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            const monthActivities = data.activities.filter(activity => {
+                const activityDate = new Date(activity.date);
+                return activityDate.getMonth() === currentMonth && activityDate.getFullYear() === currentYear;
+            });
+            
+            const monthPoints = monthActivities.reduce((sum, activity) => sum + activity.points, 0);
+            document.getElementById('month-points').textContent = monthPoints;
+            document.getElementById('month-expenses').textContent = 'R$ 0,00'; // Placeholder
+            
+            // Update status
+            const statusText = data.initialBalance > 0 
+                ? `Configurado - Saldo inicial: ${data.initialBalance} pontos, Data: ${new Date(data.startDate).toLocaleDateString('pt-BR')}`
+                : 'Não configurado';
+            document.getElementById('status-text').textContent = statusText;
+            
+            // Update form fields
+            if (data.initialBalance > 0) {
+                document.getElementById('initial-balance').value = data.initialBalance;
+                document.getElementById('start-date').value = data.startDate;
+            }
+            
+            // Update today's activities
+            updateTodayActivities();
+            
+            // Update system stats
+            updateSystemStats();
+        }
+        
+        // Update today's activities
+        function updateTodayActivities() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayActivities = systemData[currentChild].activities.filter(a => a.date === today);
+            
+            const todayList = document.getElementById('today-list');
+            
+            if (todayActivities.length === 0) {
+                todayList.innerHTML = '<p>Nenhuma atividade registrada hoje</p>';
+            } else {
+                todayList.innerHTML = todayActivities.map((activity, index) => `
+                    <div class="today-item">
+                        <span>${activity.name} (${activity.points > 0 ? '+' : ''}${activity.points} pontos)</span>
+                        <button class="remove-btn" onclick="removeTodayActivity(${index})">Remover</button>
+                    </div>
+                `).join('');
+            }
+        }
+        
+        // Update system stats
+        function updateSystemStats() {
+            const luizaTotal = systemData.luiza.activities.length;
+            const miguelTotal = systemData.miguel.activities.length;
+            const totalActivities = luizaTotal + miguelTotal;
+            
+            document.getElementById('system-stats').innerHTML = `
+                <strong>Total de atividades:</strong> ${totalActivities}<br>
+                <strong>Luiza:</strong> ${luizaTotal} atividades, ${systemData.luiza.totalPoints} pontos<br>
+                <strong>Miguel:</strong> ${miguelTotal} atividades, ${systemData.miguel.totalPoints} pontos
+            `;
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'success') {
+            console.log('📢 Notificação:', message, type);
+            
+            const notification = document.getElementById('notification');
+            notification.textContent = message;
+            notification.className = `notification ${type}`;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 3000);
+        }
+        
+        // Export data
+        function exportData() {
+            console.log('📥 Exportando dados...');
+            
+            const dataStr = JSON.stringify(systemData, null, 2);
+            const dataBlob = new Blob([dataStr], {type: 'application/json'});
+            const url = URL.createObjectURL(dataBlob);
+            
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `sistema-pontos-backup-${new Date().toISOString().split('T')[0]}.json`;
+            link.click();
+            
+            showNotification('Dados exportados com sucesso!');
+        }
+        
+        // Reset data
+        function resetData() {
+            if (confirm('Tem certeza que deseja resetar todos os dados? Esta ação não pode ser desfeita.')) {
+                console.log('🗑️ Resetando dados...');
+                
+                systemData = {
+                    luiza: {
+                        initialBalance: 0,
+                        startDate: null,
+                        totalPoints: 0,
+                        activities: []
+                    },
+                    miguel: {
+                        initialBalance: 0,
+                        startDate: null,
+                        totalPoints: 0,
+                        activities: []
+                    }
+                };
+                
+                // Clear form fields
+                document.getElementById('initial-balance').value = '';
+                document.getElementById('start-date').value = '';
+                
+                saveData();
+                updateDisplay();
+                showNotification('Sistema resetado com sucesso!');
+            }
+        }
+        
+        // Test function to verify JavaScript is working
+        function testSystem() {
+            console.log('🧪 Testando sistema...');
+            showNotification('Sistema funcionando perfeitamente!');
+            return 'Sistema OK';
+        }
+        
+        // Make test function globally available
+        window.testSystem = testSystem;
+        
+        console.log('🎯 Todas as funções carregadas. Sistema pronto para uso!');
+    </script>
+</body>
+</html>
