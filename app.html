@@ -1458,7 +1458,7 @@
                 action = multiplier > 0 ? 'perdeu' : 'ganhou';
             } else {
                 // Para ações positivas/especiais: + ganha pontos, - perde pontos
-                action = totalPoints > 0 ? 'ganhou' : 'perdeu';
+                action = multiplier > 0 ? 'ganhou' : 'perdeu';
             }
             
             const absPoints = Math.abs(totalPoints);
