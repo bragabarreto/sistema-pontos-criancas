@@ -233,10 +233,10 @@
             text-align: center;
         }
         
-        .positivos .category-header h4 { background: #4CAF50; }
-        .especiais .category-header h4 { background: #FF9800; }
-        .negativos .category-header h4 { background: #2196F3; }
-        .graves .category-header h4 { background: #F44336; }
+        .positivos .category-header h4 { background: #4CAF50; } /* Verde */
+        .especiais .category-header h4 { background: #2196F3; } /* Azul */
+        .negativos .category-header h4 { background: #F44336; } /* Vermelho */
+        .graves .category-header h4 { background: #9C27B0; } /* Roxo */
         
         .activity-item {
             display: flex;
@@ -693,15 +693,15 @@
                             <input type="number" id="mult-positivos" value="1" min="1" onchange="updateMultiplier('positivos', this.value)">
                         </div>
                         <div class="multiplier-item">
-                            <h5 style="color: #FF9800;">Especiais</h5>
+                            <h5 style="color: #2196F3;">Especiais</h5>
                             <input type="number" id="mult-especiais" value="50" min="1" onchange="updateMultiplier('especiais', this.value)">
                         </div>
                         <div class="multiplier-item">
-                            <h5 style="color: #2196F3;">Negativos</h5>
+                            <h5 style="color: #F44336;">Negativos</h5>
                             <input type="number" id="mult-negativos" value="1" min="1" onchange="updateMultiplier('negativos', this.value)">
                         </div>
                         <div class="multiplier-item">
-                            <h5 style="color: #F44336;">Graves</h5>
+                            <h5 style="color: #9C27B0;">Graves</h5>
                             <input type="number" id="mult-graves" value="100" min="1" onchange="updateMultiplier('graves', this.value)">
                         </div>
                     </div>
@@ -1428,7 +1428,14 @@
             
             // IMPORTANT: Always use today's date
             const today = new Date().toISOString().split('T')[0];
-            const totalPoints = activity.points * systemData.multipliers[category] * multiplier;
+            
+            // Para ações negativas e graves, inverter a lógica dos pontos
+            let finalMultiplier = multiplier;
+            if (category === 'negativos' || category === 'graves') {
+                finalMultiplier = -multiplier; // Inverter o sinal
+            }
+            
+            const totalPoints = activity.points * systemData.multipliers[category] * finalMultiplier;
             
             systemData[currentChild].totalPoints += totalPoints;
             systemData[currentChild].activities.push({
@@ -1444,7 +1451,16 @@
             saveData();
             updateDisplay();
             
-            const action = multiplier > 0 ? 'ganhou' : 'perdeu';
+            // Determinar ação baseada no resultado final dos pontos
+            let action;
+            if (category === 'negativos' || category === 'graves') {
+                // Para ações negativas/graves: + perde pontos, - ganha pontos
+                action = multiplier > 0 ? 'perdeu' : 'ganhou';
+            } else {
+                // Para ações positivas/especiais: + ganha pontos, - perde pontos
+                action = totalPoints > 0 ? 'ganhou' : 'perdeu';
+            }
+            
             const absPoints = Math.abs(totalPoints);
             const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
             showNotification(`${childName} ${action} ${absPoints} pontos por: ${activity.name} (${today})`);
@@ -1588,17 +1604,17 @@
                     <div style="font-size: 0.9rem; color: #666;">${categoryStats.positivos.points} pontos</div>
                 </div>
                 <div class="stat-item">
-                    <h5 style="color: #FF9800;">Especiais</h5>
+                    <h5 style="color: #2196F3;">Especiais</h5>
                     <div class="value">${categoryStats.especiais.count} atividades</div>
                     <div style="font-size: 0.9rem; color: #666;">${categoryStats.especiais.points} pontos</div>
                 </div>
                 <div class="stat-item">
-                    <h5 style="color: #2196F3;">Negativos</h5>
+                    <h5 style="color: #F44336;">Negativos</h5>
                     <div class="value">${categoryStats.negativos.count} atividades</div>
                     <div style="font-size: 0.9rem; color: #666;">${categoryStats.negativos.points} pontos</div>
                 </div>
                 <div class="stat-item">
-                    <h5 style="color: #F44336;">Graves</h5>
+                    <h5 style="color: #9C27B0;">Graves</h5>
                     <div class="value">${categoryStats.graves.count} atividades</div>
                     <div style="font-size: 0.9rem; color: #666;">${categoryStats.graves.points} pontos</div>
                 </div>
@@ -1848,7 +1864,7 @@
                 <strong>Luiza:</strong> ${luizaTotal} registros, ${systemData.luiza.totalPoints} pontos<br>
                 <strong>Miguel:</strong> ${miguelTotal} registros, ${systemData.miguel.totalPoints} pontos<br>
                 <strong>Atividades cadastradas:</strong> ${luizaCustom} (Luiza), ${miguelCustom} (Miguel)<br>
-                <strong>Multiplicadores:</strong> Positivos(${systemData.multipliers.positivos}x), Especiais(${systemData.multipliers.especiais}x), Negativos(${systemData.multipliers.negativos}x), Graves(${systemData.multipliers.graves}x)<br>
+                <strong>Multiplicadores:</strong> <span style="color: #4CAF50;">Positivos(${systemData.multipliers.positivos}x)</span>, <span style="color: #2196F3;">Especiais(${systemData.multipliers.especiais}x)</span>, <span style="color: #F44336;">Negativos(${systemData.multipliers.negativos}x)</span>, <span style="color: #9C27B0;">Graves(${systemData.multipliers.graves}x)</span><br>
                 <strong>Data atual:</strong> ${new Date().toLocaleDateString('pt-BR')}
             `;
         }
