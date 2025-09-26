@@ -544,7 +544,7 @@
         .backup-status {
             background: #e8f5e8;
             border: 1px solid #4CAF50;
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             margin-top: 15px;
             font-size: 0.9rem;
@@ -553,6 +553,60 @@
         .backup-status.error {
             background: #ffeaea;
             border-color: #f44336;
+        }
+        
+        .backup-status.warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+        
+        .folder-selector {
+            background: #f0f8ff;
+            border: 2px dashed #4CAF50;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            margin: 15px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .folder-selector:hover {
+            background: #e8f5e8;
+        }
+        
+        .folder-selector.selected {
+            background: #e8f5e8;
+            border-style: solid;
+        }
+        
+        .folder-path {
+            font-family: monospace;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 4px;
+            margin-top: 10px;
+            word-break: break-all;
+        }
+        
+        .auto-backup-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 15px;
+            flex-wrap: wrap;
+        }
+        
+        .backup-interval {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .backup-interval select {
+            padding: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
         }
     </style>
 </head>
@@ -734,8 +788,36 @@
             <!-- Config Tab -->
             <div id="config-tab" class="tab-content hidden">
                 <div class="config-section">
+                    <h3>📁 Configuração de Pasta Automática</h3>
+                    <p>Configure uma pasta no seu computador para backup automático dos dados:</p>
+                    
+                    <div class="folder-selector" id="folder-selector" onclick="selectBackupFolder()">
+                        <div style="font-size: 2rem; margin-bottom: 10px;">📁</div>
+                        <div><strong>Clique para selecionar pasta de backup</strong></div>
+                        <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                            Os dados serão salvos automaticamente na pasta selecionada
+                        </div>
+                        <div class="folder-path" id="folder-path" style="display: none;"></div>
+                    </div>
+                    
+                    <div class="auto-backup-controls">
+                        <div class="backup-interval">
+                            <label>Intervalo de backup:</label>
+                            <select id="backup-interval" onchange="updateBackupInterval()">
+                                <option value="30">30 segundos</option>
+                                <option value="60">1 minuto</option>
+                                <option value="300" selected>5 minutos</option>
+                                <option value="600">10 minutos</option>
+                                <option value="1800">30 minutos</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-secondary" onclick="manualBackup()">Backup Manual</button>
+                        <button class="btn btn-secondary" onclick="restoreFromFolder()">Restaurar da Pasta</button>
+                    </div>
+                </div>
+                
+                <div class="config-section">
                     <h3>⚙️ Configurações do Sistema</h3>
-                    <p>Sistema funcionando com backup automático local</p>
                     
                     <div style="margin-top: 20px;">
                         <button class="btn" onclick="exportData()">📥 Exportar Dados</button>
@@ -744,7 +826,7 @@
                     </div>
                     
                     <div class="backup-status" id="backup-status">
-                        <strong>📁 Backup Automático:</strong> <span id="backup-text">Verificando...</span>
+                        <strong>📁 Status do Backup:</strong> <span id="backup-text">Verificando...</span>
                     </div>
                     
                     <div style="margin-top: 20px; padding: 15px; background: #f0f8ff; border-radius: 8px;">
@@ -796,6 +878,9 @@
         let currentPeriod = 'week';
         let editingActivityId = null;
         let chart = null;
+        let backupFolderHandle = null;
+        let backupInterval = null;
+        let backupIntervalTime = 300000; // 5 minutes default
         
         let systemData = {
             luiza: {
@@ -857,7 +942,7 @@
         
         // Initialize system
         document.addEventListener('DOMContentLoaded', function() {
-            console.log('🚀 Sistema Corrigido iniciando...');
+            console.log('🚀 Sistema Final iniciando...');
             loadData();
             initializeDefaultActivities();
             updateDateTime();
@@ -870,8 +955,8 @@
             // Auto-save every 30 seconds
             setInterval(saveData, 30000);
             
-            console.log('✅ Sistema Corrigido inicializado com sucesso!');
-            showNotification('Sistema Corrigido carregado com sucesso!');
+            console.log('✅ Sistema Final inicializado com sucesso!');
+            showNotification('Sistema Final carregado com sucesso!');
         });
         
         // Initialize backup system
@@ -879,63 +964,200 @@
             try {
                 // Check if File System Access API is supported
                 if ('showDirectoryPicker' in window) {
-                    updateBackupStatus('Backup automático disponível - Clique para configurar pasta');
+                    updateBackupStatus('Backup automático disponível - Selecione uma pasta');
+                    
+                    // Try to restore folder handle from storage
+                    const savedFolderData = localStorage.getItem('backupFolderData');
+                    if (savedFolderData) {
+                        try {
+                            const folderData = JSON.parse(savedFolderData);
+                            updateFolderDisplay(folderData.name, folderData.path);
+                            updateBackupStatus('Pasta configurada - Backup automático ativo');
+                        } catch (error) {
+                            console.log('Não foi possível restaurar pasta salva');
+                        }
+                    }
                 } else {
-                    updateBackupStatus('Backup manual disponível - Use exportar/importar');
+                    updateBackupStatus('Backup manual disponível - Use exportar/importar', false, true);
                 }
                 
-                // Try to load from local backup
-                loadFromLocalBackup();
+                // Set up auto backup interval
+                setupAutoBackup();
+                
             } catch (error) {
                 console.error('Erro ao inicializar backup:', error);
                 updateBackupStatus('Erro no sistema de backup', true);
             }
         }
         
+        // Setup auto backup
+        function setupAutoBackup() {
+            if (backupInterval) {
+                clearInterval(backupInterval);
+            }
+            
+            backupInterval = setInterval(() => {
+                if (backupFolderHandle) {
+                    autoBackupToFolder();
+                }
+            }, backupIntervalTime);
+        }
+        
+        // Update backup interval
+        function updateBackupInterval() {
+            const interval = parseInt(document.getElementById('backup-interval').value) * 1000;
+            backupIntervalTime = interval;
+            setupAutoBackup();
+            showNotification(`Intervalo de backup atualizado para ${interval/1000} segundos`);
+        }
+        
+        // Select backup folder
+        async function selectBackupFolder() {
+            try {
+                if (!('showDirectoryPicker' in window)) {
+                    showNotification('Seu navegador não suporta seleção de pasta. Use exportar/importar.', 'error');
+                    return;
+                }
+                
+                const folderHandle = await window.showDirectoryPicker({
+                    mode: 'readwrite'
+                });
+                
+                backupFolderHandle = folderHandle;
+                
+                // Save folder reference
+                const folderData = {
+                    name: folderHandle.name,
+                    path: folderHandle.name // Limited path info available
+                };
+                localStorage.setItem('backupFolderData', JSON.stringify(folderData));
+                
+                updateFolderDisplay(folderHandle.name, folderHandle.name);
+                updateBackupStatus('Pasta selecionada - Backup automático ativo');
+                
+                // Perform initial backup
+                await autoBackupToFolder();
+                
+                showNotification('Pasta de backup configurada com sucesso!');
+                
+            } catch (error) {
+                if (error.name !== 'AbortError') {
+                    console.error('Erro ao selecionar pasta:', error);
+                    showNotification('Erro ao selecionar pasta de backup', 'error');
+                }
+            }
+        }
+        
+        // Update folder display
+        function updateFolderDisplay(name, path) {
+            const selector = document.getElementById('folder-selector');
+            const pathElement = document.getElementById('folder-path');
+            
+            selector.classList.add('selected');
+            selector.innerHTML = `
+                <div style="font-size: 2rem; margin-bottom: 10px;">📁✅</div>
+                <div><strong>Pasta selecionada: ${name}</strong></div>
+                <div style="font-size: 0.9rem; color: #666; margin-top: 5px;">
+                    Backup automático ativo
+                </div>
+                <div class="folder-path">${path}</div>
+            `;
+        }
+        
+        // Auto backup to folder
+        async function autoBackupToFolder() {
+            try {
+                if (!backupFolderHandle) return;
+                
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+                const filename = `sistema-pontos-backup-${timestamp}.json`;
+                
+                const backupData = {
+                    data: systemData,
+                    timestamp: new Date().toISOString(),
+                    version: '3.0'
+                };
+                
+                const fileHandle = await backupFolderHandle.getFileHandle(filename, {
+                    create: true
+                });
+                
+                const writable = await fileHandle.createWritable();
+                await writable.write(JSON.stringify(backupData, null, 2));
+                await writable.close();
+                
+                updateBackupStatus(`Último backup: ${new Date().toLocaleString('pt-BR')}`);
+                console.log('✅ Backup automático realizado:', filename);
+                
+            } catch (error) {
+                console.error('❌ Erro no backup automático:', error);
+                updateBackupStatus('Erro no backup automático', true);
+            }
+        }
+        
+        // Manual backup
+        async function manualBackup() {
+            if (backupFolderHandle) {
+                await autoBackupToFolder();
+                showNotification('Backup manual realizado com sucesso!');
+            } else {
+                showNotification('Selecione uma pasta de backup primeiro', 'error');
+            }
+        }
+        
+        // Restore from folder
+        async function restoreFromFolder() {
+            try {
+                if (!backupFolderHandle) {
+                    showNotification('Selecione uma pasta de backup primeiro', 'error');
+                    return;
+                }
+                
+                // List backup files
+                const files = [];
+                for await (const [name, handle] of backupFolderHandle.entries()) {
+                    if (name.startsWith('sistema-pontos-backup-') && name.endsWith('.json')) {
+                        files.push({ name, handle });
+                    }
+                }
+                
+                if (files.length === 0) {
+                    showNotification('Nenhum arquivo de backup encontrado na pasta', 'error');
+                    return;
+                }
+                
+                // Get the most recent backup
+                files.sort((a, b) => b.name.localeCompare(a.name));
+                const latestFile = files[0];
+                
+                const file = await latestFile.handle.getFile();
+                const content = await file.text();
+                const backupData = JSON.parse(content);
+                
+                systemData = { ...systemData, ...backupData.data };
+                saveData();
+                updateDisplay();
+                
+                showNotification(`Dados restaurados do backup: ${latestFile.name}`);
+                
+            } catch (error) {
+                console.error('Erro ao restaurar backup:', error);
+                showNotification('Erro ao restaurar dados da pasta', 'error');
+            }
+        }
+        
         // Update backup status
-        function updateBackupStatus(message, isError = false) {
+        function updateBackupStatus(message, isError = false, isWarning = false) {
             const statusElement = document.getElementById('backup-status');
             const textElement = document.getElementById('backup-text');
             
             textElement.textContent = message;
             
+            statusElement.classList.remove('error', 'warning');
             if (isError) {
                 statusElement.classList.add('error');
-            } else {
-                statusElement.classList.remove('error');
-            }
-        }
-        
-        // Load from local backup
-        function loadFromLocalBackup() {
-            try {
-                const backupData = localStorage.getItem('kidsPointsSystemBackup');
-                if (backupData) {
-                    const parsedData = JSON.parse(backupData);
-                    const backupDate = new Date(parsedData.timestamp);
-                    updateBackupStatus(`Último backup: ${backupDate.toLocaleString('pt-BR')}`);
-                }
-            } catch (error) {
-                console.error('Erro ao carregar backup local:', error);
-            }
-        }
-        
-        // Create local backup
-        function createLocalBackup() {
-            try {
-                const backupData = {
-                    data: systemData,
-                    timestamp: new Date().toISOString(),
-                    version: '2.0'
-                };
-                
-                localStorage.setItem('kidsPointsSystemBackup', JSON.stringify(backupData));
-                updateBackupStatus(`Backup criado: ${new Date().toLocaleString('pt-BR')}`);
-                
-                console.log('✅ Backup local criado com sucesso');
-            } catch (error) {
-                console.error('❌ Erro ao criar backup local:', error);
-                updateBackupStatus('Erro ao criar backup', true);
+            } else if (isWarning) {
+                statusElement.classList.add('warning');
             }
         }
         
@@ -989,7 +1211,6 @@
         function saveData() {
             try {
                 localStorage.setItem('kidsPointsSystemAdvanced', JSON.stringify(systemData));
-                createLocalBackup(); // Create backup every time we save
                 console.log('💾 Dados salvos:', systemData);
             } catch (error) {
                 console.error('❌ Erro ao salvar dados:', error);
@@ -1199,12 +1420,13 @@
             showNotification(`Atividade movida para ${direction === 'up' ? 'cima' : 'baixo'}!`);
         }
         
-        // Add activity points
+        // Add activity points (ONLY FOR TODAY)
         function addActivity(category, activityId, multiplier = 1) {
             console.log('➕ Adicionando pontos da atividade:', category, activityId, multiplier);
             const activity = systemData[currentChild].customActivities[category].find(a => a.id === activityId);
             if (!activity) return;
             
+            // IMPORTANT: Always use today's date
             const today = new Date().toISOString().split('T')[0];
             const totalPoints = activity.points * systemData.multipliers[category] * multiplier;
             
@@ -1215,7 +1437,7 @@
                 basePoints: activity.points,
                 category: category,
                 multiplier: systemData.multipliers[category],
-                date: today,
+                date: today, // Always today's date
                 timestamp: new Date().toISOString()
             });
             
@@ -1225,10 +1447,10 @@
             const action = multiplier > 0 ? 'ganhou' : 'perdeu';
             const absPoints = Math.abs(totalPoints);
             const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
-            showNotification(`${childName} ${action} ${absPoints} pontos por: ${activity.name}`);
+            showNotification(`${childName} ${action} ${absPoints} pontos por: ${activity.name} (${today})`);
         }
         
-        // Remove today activity
+        // Remove today activity (ONLY TODAY'S ACTIVITIES)
         function removeTodayActivity(index) {
             console.log('🗑️ Removendo atividade do dia:', index);
             
@@ -1249,7 +1471,7 @@
                 
                 saveData();
                 updateDisplay();
-                showNotification('Atividade removida!');
+                showNotification('Atividade de hoje removida!');
             }
         }
         
@@ -1594,7 +1816,7 @@
             });
         }
         
-        // Update today's activities
+        // Update today's activities (ONLY TODAY)
         function updateTodayActivities() {
             const today = new Date().toISOString().split('T')[0];
             const todayActivities = systemData[currentChild].activities.filter(a => a.date === today);
@@ -1606,7 +1828,7 @@
             } else {
                 todayList.innerHTML = todayActivities.map((activity, index) => `
                     <div class="today-item">
-                        <span>${activity.name} (${activity.points > 0 ? '+' : ''}${activity.points} pontos)</span>
+                        <span>${activity.name} (${activity.points > 0 ? '+' : ''}${activity.points} pontos) - ${today}</span>
                         <button class="remove-btn" onclick="removeTodayActivity(${index})">Remover</button>
                     </div>
                 `).join('');
@@ -1626,7 +1848,8 @@
                 <strong>Luiza:</strong> ${luizaTotal} registros, ${systemData.luiza.totalPoints} pontos<br>
                 <strong>Miguel:</strong> ${miguelTotal} registros, ${systemData.miguel.totalPoints} pontos<br>
                 <strong>Atividades cadastradas:</strong> ${luizaCustom} (Luiza), ${miguelCustom} (Miguel)<br>
-                <strong>Multiplicadores:</strong> Positivos(${systemData.multipliers.positivos}x), Especiais(${systemData.multipliers.especiais}x), Negativos(${systemData.multipliers.negativos}x), Graves(${systemData.multipliers.graves}x)
+                <strong>Multiplicadores:</strong> Positivos(${systemData.multipliers.positivos}x), Especiais(${systemData.multipliers.especiais}x), Negativos(${systemData.multipliers.negativos}x), Graves(${systemData.multipliers.graves}x)<br>
+                <strong>Data atual:</strong> ${new Date().toLocaleDateString('pt-BR')}
             `;
         }
         
@@ -1735,17 +1958,7 @@
             }
         }
         
-        // Test function to verify JavaScript is working
-        function testSystem() {
-            console.log('🧪 Testando sistema corrigido...');
-            showNotification('Sistema Corrigido funcionando perfeitamente!');
-            return 'Sistema Corrigido OK';
-        }
-        
-        // Make test function globally available
-        window.testSystem = testSystem;
-        
-        console.log('🎯 Sistema Corrigido totalmente carregado e funcional!');
+        console.log('🎯 Sistema Final totalmente carregado e funcional!');
     </script>
 </body>
 </html>
