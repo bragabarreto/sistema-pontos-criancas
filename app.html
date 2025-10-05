@@ -388,6 +388,65 @@
             font-size: 0.8rem;
         }
         
+        .daily-statement {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-top: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .daily-statement h4 {
+            margin-bottom: 15px;
+            color: white;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .daily-stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+        }
+        
+        .daily-stat-item {
+            background: rgba(255,255,255,0.95);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .daily-stat-item h5 {
+            font-size: 0.9rem;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+        
+        .daily-stat-item .value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #333;
+        }
+        
+        .daily-stat-item.positive .value {
+            color: #4CAF50;
+        }
+        
+        .daily-stat-item.negative .value {
+            color: #f44336;
+        }
+        
+        .daily-stat-item.total .value {
+            color: #2196F3;
+        }
+        
+        .daily-stat-item.money .value {
+            color: #FF9800;
+        }
+        
         .chart-container {
             background: #f8f9fa;
             padding: 20px;
@@ -672,6 +731,28 @@
                     <div class="stat-card">
                         <h3>Gastos Este Mês</h3>
                         <div class="value" id="month-expenses">R$ 0,00</div>
+                    </div>
+                </div>
+                
+                <div class="daily-statement">
+                    <h4>📊 Extrato Diário de Pontuação</h4>
+                    <div class="daily-stats-grid">
+                        <div class="daily-stat-item total">
+                            <h5>Total do Dia</h5>
+                            <div class="value" id="daily-total-points">0</div>
+                        </div>
+                        <div class="daily-stat-item positive">
+                            <h5>Pontos Positivos</h5>
+                            <div class="value" id="daily-positive-points">0</div>
+                        </div>
+                        <div class="daily-stat-item negative">
+                            <h5>Pontos Negativos</h5>
+                            <div class="value" id="daily-negative-points">0</div>
+                        </div>
+                        <div class="daily-stat-item money">
+                            <h5>Valor do Dia</h5>
+                            <div class="value" id="daily-money-value">R$ 0,00</div>
+                        </div>
                     </div>
                 </div>
                 
@@ -1798,6 +1879,9 @@
             // Update today's activities
             updateTodayActivities();
             
+            // Update daily statement
+            updateDailyStatement();
+            
             // Update activities display
             updateActivitiesDisplay();
             
@@ -1849,6 +1933,35 @@
                     </div>
                 `).join('');
             }
+        }
+        
+        // Update daily statement
+        function updateDailyStatement() {
+            const today = new Date().toISOString().split('T')[0];
+            const todayActivities = systemData[currentChild].activities.filter(a => a.date === today);
+            
+            // Calculate daily statistics
+            let totalPoints = 0;
+            let positivePoints = 0;
+            let negativePoints = 0;
+            
+            todayActivities.forEach(activity => {
+                totalPoints += activity.points;
+                if (activity.points > 0) {
+                    positivePoints += activity.points;
+                } else {
+                    negativePoints += activity.points;
+                }
+            });
+            
+            // Calculate monetary value (assuming 1 point = R$ 0.01)
+            const moneyValue = (totalPoints * 0.01).toFixed(2);
+            
+            // Update the display
+            document.getElementById('daily-total-points').textContent = totalPoints;
+            document.getElementById('daily-positive-points').textContent = `+${positivePoints}`;
+            document.getElementById('daily-negative-points').textContent = negativePoints;
+            document.getElementById('daily-money-value').textContent = `R$ ${moneyValue}`;
         }
         
         // Update system stats
