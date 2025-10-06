@@ -2,6 +2,10 @@
 
 Sistema completo para gerenciar comportamentos e tarefas das crianças através de um sistema de pontos, com persistência em banco de dados e implantação serverless.
 
+> **🚀 Versão 2.0 - Migrado para Vercel + PostgreSQL!**  
+> O sistema agora usa banco de dados e pode ser acessado de qualquer dispositivo.  
+> Veja [QUICKSTART.md](./QUICKSTART.md) para um guia rápido ou [DEPLOYMENT.md](./DEPLOYMENT.md) para instruções de deploy completas.
+
 ## 🌟 Funcionalidades
 
 - ✅ Registro diário de atividades
