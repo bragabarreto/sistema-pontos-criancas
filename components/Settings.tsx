@@ -109,6 +109,85 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     }
   };
 
+  const exportData = async () => {
+    try {
+      // Fetch all data
+      const [childrenRes, activitiesRes, customActivitiesRes, settingsRes] = await Promise.all([
+        fetch('/api/children'),
+        fetch('/api/activities'),
+        fetch('/api/custom-activities'),
+        fetch('/api/settings'),
+      ]);
+
+      const [children, activities, customActivities, settings] = await Promise.all([
+        childrenRes.json(),
+        activitiesRes.json(),
+        customActivitiesRes.json(),
+        settingsRes.json(),
+      ]);
+
+      const exportData = {
+        children,
+        activities,
+        customActivities,
+        settings,
+        exportDate: new Date().toISOString(),
+      };
+
+      const dataStr = JSON.stringify(exportData, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+      const url = URL.createObjectURL(dataBlob);
+      
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `sistema-pontos-backup-${new Date().toISOString().split('T')[0]}.json`;
+      link.click();
+      
+      URL.revokeObjectURL(url);
+      alert('Dados exportados com sucesso!');
+    } catch (error) {
+      console.error('Error exporting data:', error);
+      alert('Erro ao exportar dados');
+    }
+  };
+
+  const importData = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (event: any) => {
+      const file = event.target.files?.[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = async (e) => {
+        try {
+          const importedData = JSON.parse(e.target?.result as string);
+          
+          const response = await fetch('/api/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(importedData),
+          });
+
+          const result = await response.json();
+          
+          if (response.ok) {
+            alert(`Dados importados com sucesso!\n\nCrianças: ${result.children}\nAtividades personalizadas: ${result.customActivities}\nAtividades: ${result.activities}`);
+            onUpdate();
+          } else {
+            alert(`Erro ao importar dados: ${result.error}`);
+          }
+        } catch (error) {
+          console.error('Error importing data:', error);
+          alert('Erro ao processar arquivo de importação');
+        }
+      };
+      reader.readAsText(file);
+    };
+    input.click();
+  };
+
   if (loading) {
     return <div className="text-center text-gray-500">Carregando...</div>;
   }
@@ -123,6 +202,29 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">⚙️ Configurações</h2>
+
+      <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="text-xl font-bold mb-4">📦 Backup e Importação</h3>
+        <div className="flex gap-3">
+          <button
+            onClick={exportData}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 flex items-center gap-2"
+          >
+            <span>📥</span>
+            Exportar Dados
+          </button>
+          <button
+            onClick={importData}
+            className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 flex items-center gap-2"
+          >
+            <span>📤</span>
+            Importar Dados
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mt-3">
+          Exporte seus dados para fazer backup ou importe dados de um arquivo anterior.
+        </p>
+      </div>
 
       <div className="mb-8">
         <h3 className="text-xl font-bold mb-4">Multiplicadores de Pontos</h3>
