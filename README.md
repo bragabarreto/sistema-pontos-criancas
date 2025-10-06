@@ -8,11 +8,26 @@ Sistema completo para gerenciar comportamentos e tarefas das crianças através 
 
 ## 🌟 Funcionalidades
 
-- ✅ Registro diário de atividades
-- ✅ Sistema de pontos personalizável
-- ✅ Multiplicadores para atividades especiais
-- ✅ Controle de gastos e mesada
-- ✅ Relatórios e estatísticas
+### Gerenciamento Completo de Atividades
+- ✅ **Registro de atividades com calendário** - Registre atividades para dias passados
+- ✅ **Atribuir e remover pontos** - Botões dedicados para cada ação
+- ✅ **Editar e excluir atividades** - Gerenciamento completo de atividades personalizadas
+- ✅ **Drag-and-drop** - Reordene atividades arrastando e soltando
+- ✅ **4 Categorias de atividades** - Positivas, Especiais, Negativas e Graves
+
+### Configurações Avançadas
+- ✅ **Cadastro do pai/mãe** - Nome, sexo e data de início do app
+- ✅ **Saldo inicial por criança** - Configure pontos iniciais e data de início
+- ✅ **Multiplicadores personalizáveis** - Ajuste o peso de cada categoria
+- ✅ **Backup e importação** - Export/import de dados em JSON
+
+### Interface Moderna
+- ✅ **Dashboard intuitivo** - Visualize pontos e atividades recentes
+- ✅ **Data e hora atual** - Dia da semana e formato DD/MM/AAAA
+- ✅ **Relatórios e estatísticas** - Acompanhe a evolução
+- ✅ **Responsivo** - Funciona em desktop, tablet e celular
+
+### Tecnologia
 - ✅ **Persistência em banco de dados PostgreSQL**
 - ✅ **Deploy serverless no Vercel**
 - ✅ Acesso de qualquer navegador
@@ -112,12 +127,25 @@ vercel
    ```
    via POST request (use Postman, curl ou similar)
 
-2. Pronto! Seu sistema está no ar 🎉
+2. Configure o sistema:
+   - Vá para a aba "Configurações"
+   - Preencha os dados do pai/mãe
+   - Configure o saldo inicial de cada criança
+
+3. Pronto! Seu sistema está no ar 🎉
+
+## 📚 Documentação Adicional
+
+- [FEATURES.md](./FEATURES.md) - Guia completo de funcionalidades e uso
+- [QUICKSTART.md](./QUICKSTART.md) - Guia rápido de início
+- [DEPLOYMENT.md](./DEPLOYMENT.md) - Instruções detalhadas de deploy
+- [IMPLEMENTATION.md](./IMPLEMENTATION.md) - Detalhes técnicos da implementação
 
 ## 🗄️ Estrutura do Banco de Dados
 
 ### Tabelas:
 
+- **parent_user**: Dados do pai/mãe responsável
 - **children**: Dados das crianças (Luiza e Miguel)
 - **activities**: Histórico de atividades realizadas
 - **custom_activities**: Atividades personalizadas por criança
@@ -159,6 +187,10 @@ npm run db:studio
 ### Settings
 - `GET /api/settings?key=[key]` - Buscar configuração
 - `POST /api/settings` - Salvar configuração
+
+### Parent User
+- `GET /api/parent` - Buscar dados do pai/mãe
+- `POST /api/parent` - Salvar/atualizar dados do pai/mãe
 
 ### Init
 - `POST /api/init` - Inicializar banco com dados padrão
