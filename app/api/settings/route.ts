@@ -17,7 +17,14 @@ export async function GET(request: Request) {
     return NextResponse.json(allSettings);
   } catch (error) {
     console.error('Error fetching settings:', error);
-    return NextResponse.json({ error: 'Failed to fetch settings' }, { status: 500 });
+    // Return appropriate type based on whether key was requested
+    const { searchParams } = new URL(request.url);
+    const key = searchParams.get('key');
+    if (key) {
+      return NextResponse.json(null, { status: 500 });
+    }
+    // Always return an array when fetching all settings, even on error
+    return NextResponse.json([], { status: 500 });
   }
 }
 

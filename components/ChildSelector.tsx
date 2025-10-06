@@ -7,9 +7,12 @@ interface ChildSelectorProps {
 }
 
 export function ChildSelector({ children, currentChild, onSelectChild }: ChildSelectorProps) {
+  // Ensure children is an array to prevent .map errors
+  const childrenArray = Array.isArray(children) ? children : [];
+  
   return (
     <div className="flex gap-4 mb-6">
-      {children.map((child) => (
+      {childrenArray.map((child) => (
         <button
           key={child.id}
           onClick={() => onSelectChild(child.id)}

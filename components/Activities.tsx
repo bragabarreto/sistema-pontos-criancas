@@ -23,9 +23,17 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     try {
       const response = await fetch(`/api/custom-activities?childId=${childId}`);
       const data = await response.json();
-      setCustomActivities(data);
+      
+      // Validate that the response is an array
+      if (Array.isArray(data)) {
+        setCustomActivities(data);
+      } else {
+        console.error('Invalid custom activities response: expected array, got:', typeof data);
+        setCustomActivities([]);
+      }
     } catch (error) {
       console.error('Error loading custom activities:', error);
+      setCustomActivities([]);
     }
   };
 
