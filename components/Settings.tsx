@@ -19,6 +19,11 @@ interface CustomActivity {
   updatedAt: string;
 }
 
+interface DragState {
+  draggedActivity: CustomActivity | null;
+  draggedOverActivity: CustomActivity | null;
+}
+
 export function Settings({ childId, onUpdate }: SettingsProps) {
   const [multipliers, setMultipliers] = useState({
     positivos: 1,
@@ -34,11 +39,29 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
   const [editPoints, setEditPoints] = useState(0);
   const [addEntryModalOpen, setAddEntryModalOpen] = useState(false);
   const [selectedActivity, setSelectedActivity] = useState<CustomActivity | null>(null);
+  
+  // Parent user state
+  const [parentName, setParentName] = useState('');
+  const [parentGender, setParentGender] = useState('');
+  const [appStartDate, setAppStartDate] = useState('');
+  const [parentExists, setParentExists] = useState(false);
+  
+  // Child initial balance state
+  const [childInitialBalance, setChildInitialBalance] = useState(0);
+  const [childStartDate, setChildStartDate] = useState('');
+  
+  // Drag and drop state
+  const [dragState, setDragState] = useState<DragState>({
+    draggedActivity: null,
+    draggedOverActivity: null,
+  });
 
   useEffect(() => {
     loadSettings();
+    loadParentInfo();
     if (childId) {
       loadCustomActivities();
+      loadChildInfo();
     }
   }, [childId]);
 
@@ -71,6 +94,36 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     } catch (error) {
       console.error('Error loading custom activities:', error);
       setCustomActivities([]);
+    }
+  };
+
+  const loadParentInfo = async () => {
+    try {
+      const response = await fetch('/api/parent');
+      const data = await response.json();
+      
+      if (data) {
+        setParentName(data.name || '');
+        setParentGender(data.gender || '');
+        setAppStartDate(data.appStartDate ? new Date(data.appStartDate).toISOString().split('T')[0] : '');
+        setParentExists(true);
+      }
+    } catch (error) {
+      console.error('Error loading parent info:', error);
+    }
+  };
+
+  const loadChildInfo = async () => {
+    try {
+      const response = await fetch(`/api/children/${childId}`);
+      const data = await response.json();
+      
+      if (data) {
+        setChildInitialBalance(data.initialBalance || 0);
+        setChildStartDate(data.startDate ? new Date(data.startDate).toISOString().split('T')[0] : '');
+      }
+    } catch (error) {
+      console.error('Error loading child info:', error);
     }
   };
 
@@ -315,6 +368,140 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     input.click();
   };
 
+  const saveParentInfo = async () => {
+    if (!parentName || !appStartDate) {
+      alert('Por favor, preencha o nome e a data de início do app');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/parent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: parentName,
+          gender: parentGender,
+          appStartDate,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Informações do pai/mãe salvas com sucesso!');
+        setParentExists(true);
+      } else {
+        alert('Erro ao salvar informações');
+      }
+    } catch (error) {
+      console.error('Error saving parent info:', error);
+      alert('Erro ao salvar informações');
+    }
+  };
+
+  const saveChildInitialBalance = async () => {
+    if (!childId) {
+      alert('Selecione uma criança');
+      return;
+    }
+
+    if (!childStartDate) {
+      alert('Por favor, defina a data de início');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/children/${childId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          initialBalance: childInitialBalance,
+          startDate: childStartDate,
+        }),
+      });
+
+      if (response.ok) {
+        alert('Saldo inicial e data de início salvos com sucesso!');
+        onUpdate();
+      } else {
+        alert('Erro ao salvar configurações');
+      }
+    } catch (error) {
+      console.error('Error saving child initial balance:', error);
+      alert('Erro ao salvar configurações');
+    }
+  };
+
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, activity: CustomActivity) => {
+    setDragState({ ...dragState, draggedActivity: activity });
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.classList.add('opacity-50');
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('opacity-50');
+    setDragState({ draggedActivity: null, draggedOverActivity: null });
+  };
+
+  const handleDragOver = (e: React.DragEvent, activity: CustomActivity) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragState({ ...dragState, draggedOverActivity: activity });
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetActivity: CustomActivity) => {
+    e.preventDefault();
+    
+    const { draggedActivity } = dragState;
+    if (!draggedActivity || draggedActivity.id === targetActivity.id) {
+      setDragState({ draggedActivity: null, draggedOverActivity: null });
+      return;
+    }
+
+    // Only allow drag within same category
+    if (draggedActivity.category !== targetActivity.category) {
+      alert('Só é possível reordenar atividades dentro da mesma categoria');
+      setDragState({ draggedActivity: null, draggedOverActivity: null });
+      return;
+    }
+
+    try {
+      // Get all activities in the category, sorted by order
+      const categoryActivities = customActivities
+        .filter(a => a.category === draggedActivity.category)
+        .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
+      const draggedIndex = categoryActivities.findIndex(a => a.id === draggedActivity.id);
+      const targetIndex = categoryActivities.findIndex(a => a.id === targetActivity.id);
+
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      // Reorder the activities
+      const reordered = [...categoryActivities];
+      const [removed] = reordered.splice(draggedIndex, 1);
+      reordered.splice(targetIndex, 0, removed);
+
+      // Update order indices in backend
+      for (let i = 0; i < reordered.length; i++) {
+        await fetch(`/api/custom-activities/${reordered[i].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderIndex: i,
+          }),
+        });
+      }
+
+      // Reload activities
+      loadCustomActivities();
+      
+    } catch (error) {
+      console.error('Error reordering activities:', error);
+      alert('Erro ao reordenar atividades');
+    }
+
+    setDragState({ draggedActivity: null, draggedOverActivity: null });
+  };
+
   if (loading) {
     return <div className="text-center text-gray-500">Carregando...</div>;
   }
@@ -329,6 +516,85 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">⚙️ Configurações</h2>
+
+      {/* Parent User Registration Section */}
+      <div className="mb-8 bg-purple-50 border border-purple-200 rounded-lg p-4">
+        <h3 className="text-xl font-bold mb-4">👤 Dados do Pai/Mãe</h3>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+          <div>
+            <label className="block text-sm font-semibold mb-2">Nome do Pai/Mãe:</label>
+            <input
+              type="text"
+              value={parentName}
+              onChange={(e) => setParentName(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              placeholder="Digite seu nome"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2">Sexo:</label>
+            <select
+              value={parentGender}
+              onChange={(e) => setParentGender(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            >
+              <option value="">Selecione</option>
+              <option value="masculino">Masculino</option>
+              <option value="feminino">Feminino</option>
+              <option value="outro">Outro</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-semibold mb-2">Data de Início do App:</label>
+            <input
+              type="date"
+              value={appStartDate}
+              onChange={(e) => setAppStartDate(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
+            />
+          </div>
+        </div>
+        <button
+          onClick={saveParentInfo}
+          className="bg-purple-600 text-white px-6 py-2 rounded-md hover:bg-purple-700 font-semibold"
+        >
+          {parentExists ? '💾 Atualizar Dados' : '💾 Salvar Dados'}
+        </button>
+      </div>
+
+      {/* Child Initial Balance Section */}
+      {childId && (
+        <div className="mb-8 bg-indigo-50 border border-indigo-200 rounded-lg p-4">
+          <h3 className="text-xl font-bold mb-4">🎯 Configurações da Criança</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-semibold mb-2">Saldo Inicial (pontos):</label>
+              <input
+                type="number"
+                value={childInitialBalance}
+                onChange={(e) => setChildInitialBalance(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Ex: 100"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-semibold mb-2">Data de Início para a Criança:</label>
+              <input
+                type="date"
+                value={childStartDate}
+                onChange={(e) => setChildStartDate(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              />
+            </div>
+          </div>
+          <button
+            onClick={saveChildInitialBalance}
+            className="bg-indigo-600 text-white px-6 py-2 rounded-md hover:bg-indigo-700 font-semibold"
+          >
+            💾 Salvar Configurações da Criança
+          </button>
+        </div>
+      )}
 
       <div className="mb-8 bg-blue-50 border border-blue-200 rounded-lg p-4">
         <h3 className="text-xl font-bold mb-4">📦 Backup e Importação</h3>
@@ -404,6 +670,10 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
       {childId && (
         <div>
           <h3 className="text-xl font-bold mb-4">Gerenciar Atividades Personalizadas</h3>
+          <p className="text-sm text-gray-600 mb-4 bg-yellow-50 border border-yellow-200 p-3 rounded-md">
+            💡 <strong>Dica:</strong> Você pode arrastar e soltar (drag-and-drop) as atividades para reordená-las dentro de cada categoria. 
+            Alternativamente, use os botões ⬆️ e ⬇️.
+          </p>
           
           {Object.entries({
             positivos: 'Atividades Positivas',
@@ -429,17 +699,31 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
                     const categoryActivities = categorizedActivities[category as keyof typeof categorizedActivities];
                     const isFirst = index === 0;
                     const isLast = index === categoryActivities.length - 1;
+                    const isDraggedOver = dragState.draggedOverActivity?.id === activity.id;
                     
                     return (
-                      <div key={activity.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800">{activity.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {activity.points} pontos base × {multipliers[category as keyof typeof multipliers]} = {' '}
-                            <span className="font-bold">
-                              {activity.points * multipliers[category as keyof typeof multipliers]} pontos
-                            </span>
-                          </p>
+                      <div 
+                        key={activity.id} 
+                        className={`flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors cursor-move ${
+                          isDraggedOver ? 'border-blue-500 border-2 bg-blue-50' : ''
+                        }`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, activity)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, activity)}
+                        onDrop={(e) => handleDrop(e, activity)}
+                      >
+                        <div className="flex-1 flex items-center gap-2">
+                          <span className="text-gray-400 cursor-move">⋮⋮</span>
+                          <div>
+                            <p className="font-semibold text-gray-800">{activity.name}</p>
+                            <p className="text-sm text-gray-600">
+                              {activity.points} pontos base × {multipliers[category as keyof typeof multipliers]} = {' '}
+                              <span className="font-bold">
+                                {activity.points * multipliers[category as keyof typeof multipliers]} pontos
+                              </span>
+                            </p>
+                          </div>
                         </div>
                         <div className="flex gap-1 items-center ml-4">
                           {/* Move Up Button */}

@@ -4,25 +4,38 @@ import { children, customActivities, settings } from '@/lib/schema';
 
 const defaultActivities = {
   positivos: [
-    { id: 'pos1', name: 'Escovar os dentes', points: 1 },
-    { id: 'pos2', name: 'Arrumar a cama', points: 1 },
-    { id: 'pos3', name: 'Fazer lição de casa', points: 2 },
-    { id: 'pos4', name: 'Ajudar a organizar brinquedos', points: 1 }
+    { id: 'pos1', name: 'Chegar cedo na escola', points: 1 },
+    { id: 'pos2', name: 'Chegar bem cedo na escola', points: 2 },
+    { id: 'pos3', name: 'Fazer a tarefa sozinho', points: 2 },
+    { id: 'pos4', name: 'Ajudar o irmão a fazer a tarefa', points: 2 },
+    { id: 'pos5', name: 'Comer toda a refeição', points: 1 },
+    { id: 'pos6', name: 'Comer frutas ou verduras', points: 1 },
+    { id: 'pos7', name: 'Dormir cedo', points: 1 },
+    { id: 'pos8', name: 'Limpeza e saúde', points: 1 },
+    { id: 'pos9', name: 'Organização', points: 1 }
   ],
   especiais: [
-    { id: 'esp1', name: 'Ajudar em casa sem pedir', points: 1 },
-    { id: 'esp2', name: 'Nota boa na escola', points: 2 },
-    { id: 'esp3', name: 'Comportamento exemplar', points: 1 }
+    { id: 'esp1', name: 'Ler um livro', points: 1 },
+    { id: 'esp2', name: 'Tirar nota 10', points: 1 },
+    { id: 'esp3', name: 'Viagem - \'se virar\'', points: 1 },
+    { id: 'esp4', name: 'Comida especial', points: 1 },
+    { id: 'esp5', name: 'Coragem', points: 1 },
+    { id: 'esp6', name: 'Ações especiais', points: 1 }
   ],
   negativos: [
-    { id: 'neg1', name: 'Não escovar os dentes', points: -1 },
-    { id: 'neg2', name: 'Bagunçar o quarto', points: -1 },
-    { id: 'neg3', name: 'Não fazer lição de casa', points: -2 }
+    { id: 'neg1', name: 'Chegar atrasado na escola', points: -1 },
+    { id: 'neg2', name: 'Não fazer a tarefa', points: -2 },
+    { id: 'neg3', name: 'Não comer toda a refeição', points: -1 },
+    { id: 'neg4', name: 'Brigar com o irmão', points: -1 },
+    { id: 'neg5', name: 'Dar trabalho para dormir', points: -1 },
+    { id: 'neg6', name: 'Desobedecer os adultos', points: -2 },
+    { id: 'neg7', name: 'Falar bobeira', points: -1 },
+    { id: 'neg8', name: 'Gritar', points: -1 }
   ],
   graves: [
-    { id: 'gra1', name: 'Desobedecer', points: -1 },
-    { id: 'gra2', name: 'Mentir', points: -2 },
-    { id: 'gra3', name: 'Brigar com irmão/irmã', points: -1 }
+    { id: 'gra1', name: 'Bater no irmão', points: -1 },
+    { id: 'gra2', name: 'Falar palavrão', points: -1 },
+    { id: 'gra3', name: 'Mentir', points: -2 }
   ]
 };
 
