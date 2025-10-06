@@ -10,13 +10,14 @@ export async function PUT(
   const params = await context.params;
   try {
     const body = await request.json();
-    const { name, points, category } = body;
+    const { name, points, category, orderIndex } = body;
 
     const updatedCustomActivity = await db.update(customActivities)
       .set({
         ...(name !== undefined && { name }),
         ...(points !== undefined && { points }),
         ...(category !== undefined && { category }),
+        ...(orderIndex !== undefined && { orderIndex }),
         updatedAt: new Date(),
       })
       .where(eq(customActivities.id, parseInt(params.id)))

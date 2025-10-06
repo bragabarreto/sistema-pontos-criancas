@@ -19,6 +19,11 @@ interface CustomActivity {
   updatedAt: string;
 }
 
+interface DragState {
+  draggedActivity: CustomActivity | null;
+  draggedOverActivity: CustomActivity | null;
+}
+
 export function Settings({ childId, onUpdate }: SettingsProps) {
   const [multipliers, setMultipliers] = useState({
     positivos: 1,
@@ -44,6 +49,12 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
   // Child initial balance state
   const [childInitialBalance, setChildInitialBalance] = useState(0);
   const [childStartDate, setChildStartDate] = useState('');
+  
+  // Drag and drop state
+  const [dragState, setDragState] = useState<DragState>({
+    draggedActivity: null,
+    draggedOverActivity: null,
+  });
 
   useEffect(() => {
     loadSettings();
@@ -419,6 +430,78 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e: React.DragEvent, activity: CustomActivity) => {
+    setDragState({ ...dragState, draggedActivity: activity });
+    e.dataTransfer.effectAllowed = 'move';
+    e.currentTarget.classList.add('opacity-50');
+  };
+
+  const handleDragEnd = (e: React.DragEvent) => {
+    e.currentTarget.classList.remove('opacity-50');
+    setDragState({ draggedActivity: null, draggedOverActivity: null });
+  };
+
+  const handleDragOver = (e: React.DragEvent, activity: CustomActivity) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    setDragState({ ...dragState, draggedOverActivity: activity });
+  };
+
+  const handleDrop = async (e: React.DragEvent, targetActivity: CustomActivity) => {
+    e.preventDefault();
+    
+    const { draggedActivity } = dragState;
+    if (!draggedActivity || draggedActivity.id === targetActivity.id) {
+      setDragState({ draggedActivity: null, draggedOverActivity: null });
+      return;
+    }
+
+    // Only allow drag within same category
+    if (draggedActivity.category !== targetActivity.category) {
+      alert('Só é possível reordenar atividades dentro da mesma categoria');
+      setDragState({ draggedActivity: null, draggedOverActivity: null });
+      return;
+    }
+
+    try {
+      // Get all activities in the category, sorted by order
+      const categoryActivities = customActivities
+        .filter(a => a.category === draggedActivity.category)
+        .sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
+
+      const draggedIndex = categoryActivities.findIndex(a => a.id === draggedActivity.id);
+      const targetIndex = categoryActivities.findIndex(a => a.id === targetActivity.id);
+
+      if (draggedIndex === -1 || targetIndex === -1) return;
+
+      // Reorder the activities
+      const reordered = [...categoryActivities];
+      const [removed] = reordered.splice(draggedIndex, 1);
+      reordered.splice(targetIndex, 0, removed);
+
+      // Update order indices in backend
+      for (let i = 0; i < reordered.length; i++) {
+        await fetch(`/api/custom-activities/${reordered[i].id}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            orderIndex: i,
+          }),
+        });
+      }
+
+      // Reload activities
+      loadCustomActivities();
+      
+    } catch (error) {
+      console.error('Error reordering activities:', error);
+      alert('Erro ao reordenar atividades');
+    }
+
+    setDragState({ draggedActivity: null, draggedOverActivity: null });
+  };
+
   if (loading) {
     return <div className="text-center text-gray-500">Carregando...</div>;
   }
@@ -587,6 +670,10 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
       {childId && (
         <div>
           <h3 className="text-xl font-bold mb-4">Gerenciar Atividades Personalizadas</h3>
+          <p className="text-sm text-gray-600 mb-4 bg-yellow-50 border border-yellow-200 p-3 rounded-md">
+            💡 <strong>Dica:</strong> Você pode arrastar e soltar (drag-and-drop) as atividades para reordená-las dentro de cada categoria. 
+            Alternativamente, use os botões ⬆️ e ⬇️.
+          </p>
           
           {Object.entries({
             positivos: 'Atividades Positivas',
@@ -612,17 +699,31 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
                     const categoryActivities = categorizedActivities[category as keyof typeof categorizedActivities];
                     const isFirst = index === 0;
                     const isLast = index === categoryActivities.length - 1;
+                    const isDraggedOver = dragState.draggedOverActivity?.id === activity.id;
                     
                     return (
-                      <div key={activity.id} className="flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors">
-                        <div className="flex-1">
-                          <p className="font-semibold text-gray-800">{activity.name}</p>
-                          <p className="text-sm text-gray-600">
-                            {activity.points} pontos base × {multipliers[category as keyof typeof multipliers]} = {' '}
-                            <span className="font-bold">
-                              {activity.points * multipliers[category as keyof typeof multipliers]} pontos
-                            </span>
-                          </p>
+                      <div 
+                        key={activity.id} 
+                        className={`flex justify-between items-center bg-gray-50 p-3 rounded-md border border-gray-200 hover:bg-gray-100 transition-colors cursor-move ${
+                          isDraggedOver ? 'border-blue-500 border-2 bg-blue-50' : ''
+                        }`}
+                        draggable
+                        onDragStart={(e) => handleDragStart(e, activity)}
+                        onDragEnd={handleDragEnd}
+                        onDragOver={(e) => handleDragOver(e, activity)}
+                        onDrop={(e) => handleDrop(e, activity)}
+                      >
+                        <div className="flex-1 flex items-center gap-2">
+                          <span className="text-gray-400 cursor-move">⋮⋮</span>
+                          <div>
+                            <p className="font-semibold text-gray-800">{activity.name}</p>
+                            <p className="text-sm text-gray-600">
+                              {activity.points} pontos base × {multipliers[category as keyof typeof multipliers]} = {' '}
+                              <span className="font-bold">
+                                {activity.points * multipliers[category as keyof typeof multipliers]} pontos
+                              </span>
+                            </p>
+                          </div>
                         </div>
                         <div className="flex gap-1 items-center ml-4">
                           {/* Move Up Button */}
