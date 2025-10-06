@@ -1,5 +1,14 @@
 import { pgTable, serial, text, integer, timestamp, jsonb, boolean } from 'drizzle-orm/pg-core';
 
+export const parentUser = pgTable('parent_user', {
+  id: serial('id').primaryKey(),
+  name: text('name').notNull(),
+  gender: text('gender'), // 'masculino', 'feminino', 'outro'
+  appStartDate: timestamp('app_start_date').notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  updatedAt: timestamp('updated_at').defaultNow().notNull(),
+});
+
 export const children = pgTable('children', {
   id: serial('id').primaryKey(),
   name: text('name').notNull(),
@@ -48,3 +57,5 @@ export type CustomActivity = typeof customActivities.$inferSelect;
 export type NewCustomActivity = typeof customActivities.$inferInsert;
 export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
+export type ParentUser = typeof parentUser.$inferSelect;
+export type NewParentUser = typeof parentUser.$inferInsert;

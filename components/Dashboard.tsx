@@ -10,12 +10,26 @@ interface DashboardProps {
 export function Dashboard({ childId, childData }: DashboardProps) {
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [currentDate, setCurrentDate] = useState('');
+  const [currentWeekday, setCurrentWeekday] = useState('');
 
   useEffect(() => {
     if (childId) {
       loadActivities();
     }
+    updateCurrentDate();
   }, [childId]);
+
+  const updateCurrentDate = () => {
+    const now = new Date();
+    const weekdays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const day = String(now.getDate()).padStart(2, '0');
+    const month = String(now.getMonth() + 1).padStart(2, '0');
+    const year = now.getFullYear();
+    
+    setCurrentWeekday(weekdays[now.getDay()]);
+    setCurrentDate(`${day}/${month}/${year}`);
+  };
 
   const loadActivities = async () => {
     try {
@@ -65,7 +79,15 @@ export function Dashboard({ childId, childData }: DashboardProps) {
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6">📊 Dashboard - {childData.name}</h2>
+      <div className="mb-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg shadow-md">
+        <h2 className="text-2xl font-bold mb-1">📊 Dashboard - {childData.name}</h2>
+        <p className="text-lg">
+          <span className="font-semibold">{currentWeekday}</span> - {currentDate}
+        </p>
+        <p className="text-sm mt-1 opacity-90">
+          ℹ️ As atribuições imediatas são referentes ao dia em curso. Use o calendário para registros de outros dias.
+        </p>
+      </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-md">
