@@ -28,6 +28,7 @@ export const customActivities = pgTable('custom_activities', {
   name: text('name').notNull(),
   points: integer('points').notNull(),
   category: text('category').notNull(), // positivos, especiais, negativos, graves
+  orderIndex: integer('order_index').default(0).notNull(),
   createdAt: timestamp('created_at').defaultNow().notNull(),
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });

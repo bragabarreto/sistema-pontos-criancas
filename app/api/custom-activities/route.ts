@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { customActivities } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { eq, asc } from 'drizzle-orm';
 
 export async function GET(request: Request) {
   try {
@@ -11,11 +11,12 @@ export async function GET(request: Request) {
     if (childId) {
       const childCustomActivities = await db.select()
         .from(customActivities)
-        .where(eq(customActivities.childId, parseInt(childId)));
+        .where(eq(customActivities.childId, parseInt(childId)))
+        .orderBy(asc(customActivities.orderIndex));
       return NextResponse.json(childCustomActivities);
     }
 
-    const allCustomActivities = await db.select().from(customActivities);
+    const allCustomActivities = await db.select().from(customActivities).orderBy(asc(customActivities.orderIndex));
     return NextResponse.json(allCustomActivities);
   } catch (error) {
     console.error('Error fetching custom activities:', error);
@@ -29,12 +30,23 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { childId, activityId, name, points, category } = body;
 
+    // Get the max orderIndex for this child and category
+    const existingActivities = await db.select()
+      .from(customActivities)
+      .where(eq(customActivities.childId, childId));
+    
+    const categoryActivities = existingActivities.filter(a => a.category === category);
+    const maxOrder = categoryActivities.length > 0 
+      ? Math.max(...categoryActivities.map(a => a.orderIndex || 0))
+      : -1;
+
     const newCustomActivity = await db.insert(customActivities).values({
       childId,
       activityId,
       name,
       points,
       category,
+      orderIndex: maxOrder + 1,
     }).returning();
 
     return NextResponse.json(newCustomActivity[0], { status: 201 });

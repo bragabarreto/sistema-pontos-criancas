@@ -38,6 +38,23 @@ export function Reports({ childId }: ReportsProps) {
     }
   };
 
+  const deleteActivityEntry = async (activityId: number) => {
+    if (!confirm('Tem certeza que deseja excluir esta entrada?')) return;
+
+    try {
+      await fetch(`/api/activities/${activityId}`, {
+        method: 'DELETE',
+      });
+      loadActivities();
+      alert('Entrada excluída com sucesso!');
+      // Optionally trigger parent update to refresh points
+      window.location.reload();
+    } catch (error) {
+      console.error('Error deleting activity entry:', error);
+      alert('Erro ao excluir entrada');
+    }
+  };
+
   if (!childId) {
     return <div className="text-center text-gray-500">Selecione uma criança</div>;
   }
@@ -121,7 +138,7 @@ export function Reports({ childId }: ReportsProps) {
                 key={activity.id}
                 className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm"
               >
-                <div>
+                <div className="flex-1">
                   <p className="font-semibold">{activity.name}</p>
                   <p className="text-sm text-gray-500">
                     {new Date(activity.date).toLocaleDateString('pt-BR', {
@@ -133,11 +150,20 @@ export function Reports({ childId }: ReportsProps) {
                     })}
                   </p>
                 </div>
-                <div className="text-right">
-                  <p className={`font-bold ${activity.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                    {activity.points > 0 ? '+' : ''}{activity.points * activity.multiplier}
-                  </p>
-                  <p className="text-xs text-gray-500">{activity.category}</p>
+                <div className="text-right flex items-center gap-3">
+                  <div>
+                    <p className={`font-bold ${activity.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
+                      {activity.points > 0 ? '+' : ''}{activity.points * activity.multiplier}
+                    </p>
+                    <p className="text-xs text-gray-500">{activity.category}</p>
+                  </div>
+                  <button
+                    onClick={() => deleteActivityEntry(activity.id)}
+                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 font-semibold"
+                    title="Excluir entrada"
+                  >
+                    🗑️
+                  </button>
                 </div>
               </div>
             ))
