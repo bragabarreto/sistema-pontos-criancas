@@ -9,7 +9,8 @@ export async function GET() {
     return NextResponse.json(allChildren);
   } catch (error) {
     console.error('Error fetching children:', error);
-    return NextResponse.json({ error: 'Failed to fetch children' }, { status: 500 });
+    // Always return an array, even on error, to prevent frontend issues
+    return NextResponse.json([], { status: 500 });
   }
 }
 

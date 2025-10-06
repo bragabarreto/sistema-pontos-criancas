@@ -22,9 +22,17 @@ export function Reports({ childId }: ReportsProps) {
       setLoading(true);
       const response = await fetch(`/api/activities?childId=${childId}`);
       const data = await response.json();
-      setActivities(data);
+      
+      // Validate that the response is an array
+      if (Array.isArray(data)) {
+        setActivities(data);
+      } else {
+        console.error('Invalid activities response: expected array, got:', typeof data);
+        setActivities([]);
+      }
     } catch (error) {
       console.error('Error loading activities:', error);
+      setActivities([]);
     } finally {
       setLoading(false);
     }

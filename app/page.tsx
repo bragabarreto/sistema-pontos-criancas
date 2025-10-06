@@ -12,6 +12,7 @@ export default function Home() {
   const [currentTab, setCurrentTab] = useState('dashboard');
   const [children, setChildren] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     loadChildren();
@@ -21,25 +22,57 @@ export default function Home() {
     try {
       const response = await fetch('/api/children');
       const data = await response.json();
-      setChildren(data);
       
-      // Auto-select first child if available
-      if (data.length > 0 && !currentChild) {
-        setCurrentChild(data[0].id);
+      // Validate that the response is an array before using it
+      if (Array.isArray(data)) {
+        setChildren(data);
+        setError(null);
+        
+        // Auto-select first child if available
+        if (data.length > 0 && !currentChild) {
+          setCurrentChild(data[0].id);
+        }
+      } else {
+        console.error('Invalid API response: expected array, got:', typeof data);
+        setChildren([]);
+        setError('Erro ao carregar dados. Por favor, tente novamente.');
       }
     } catch (error) {
       console.error('Error loading children:', error);
+      setChildren([]);
+      setError('Erro de conexão. Verifique sua internet e tente novamente.');
     } finally {
       setLoading(false);
     }
   };
 
-  const selectedChildData = children.find(c => c.id === currentChild);
+  const selectedChildData = Array.isArray(children) ? children.find(c => c.id === currentChild) : undefined;
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-white text-xl">Carregando...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="bg-red-500 text-white p-6 rounded-lg shadow-lg max-w-md">
+          <h2 className="text-2xl font-bold mb-2">⚠️ Erro</h2>
+          <p className="mb-4">{error}</p>
+          <button
+            onClick={() => {
+              setError(null);
+              setLoading(true);
+              loadChildren();
+            }}
+            className="bg-white text-red-500 px-4 py-2 rounded font-semibold hover:bg-red-50 transition-all"
+          >
+            Tentar Novamente
+          </button>
+        </div>
       </div>
     );
   }

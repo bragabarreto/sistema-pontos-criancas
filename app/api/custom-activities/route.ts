@@ -19,7 +19,8 @@ export async function GET(request: Request) {
     return NextResponse.json(allCustomActivities);
   } catch (error) {
     console.error('Error fetching custom activities:', error);
-    return NextResponse.json({ error: 'Failed to fetch custom activities' }, { status: 500 });
+    // Always return an array, even on error, to prevent frontend issues
+    return NextResponse.json([], { status: 500 });
   }
 }
 
