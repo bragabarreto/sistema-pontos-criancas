@@ -1,12 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { customActivities } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
-
-import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
 import { customActivities, children } from '@/lib/schema';
-import { eq, like, or } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 
 export async function PUT(
   request: Request,
