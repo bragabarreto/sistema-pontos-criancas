@@ -30,28 +30,55 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { childId, name, points, category, date, multiplier } = body;
 
+    // Validate required fields
+    if (!childId || !name || points === undefined || !category) {
+      return NextResponse.json({ 
+        error: 'Missing required fields: childId, name, points, and category are required' 
+      }, { status: 400 });
+    }
+
+    // Validate data types
+    const parsedChildId = parseInt(childId);
+    const parsedPoints = parseInt(points);
+    const parsedMultiplier = multiplier ? parseInt(multiplier) : 1;
+
+    if (isNaN(parsedChildId) || isNaN(parsedPoints) || isNaN(parsedMultiplier)) {
+      return NextResponse.json({ 
+        error: 'Invalid data types: childId, points, and multiplier must be numbers' 
+      }, { status: 400 });
+    }
+
     // Create activity
     const newActivity = await db.insert(activities).values({
-      childId,
+      childId: parsedChildId,
       name,
-      points,
+      points: parsedPoints,
       category,
       date: date ? new Date(date) : new Date(),
-      multiplier: multiplier || 1,
+      multiplier: parsedMultiplier,
     }).returning();
 
-    // Update child's total points
-    const pointsChange = points * (multiplier || 1);
-    await db.execute(`
-      UPDATE children 
-      SET total_points = total_points + ${pointsChange},
-          updated_at = NOW()
-      WHERE id = ${childId}
-    `);
+    // Update child's total points using Drizzle ORM (safe from SQL injection)
+    const pointsChange = parsedPoints * parsedMultiplier;
+    
+    // First, get the current child to update total points
+    const [currentChild] = await db.select().from(children).where(eq(children.id, parsedChildId));
+    
+    if (currentChild) {
+      await db.update(children)
+        .set({
+          totalPoints: currentChild.totalPoints + pointsChange,
+          updatedAt: new Date(),
+        })
+        .where(eq(children.id, parsedChildId));
+    }
 
     return NextResponse.json(newActivity[0], { status: 201 });
   } catch (error) {
     console.error('Error creating activity:', error);
-    return NextResponse.json({ error: 'Failed to create activity' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to create activity', 
+      details: error instanceof Error ? error.message : 'Unknown error' 
+    }, { status: 500 });
   }
 }

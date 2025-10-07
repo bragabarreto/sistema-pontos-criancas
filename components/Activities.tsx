@@ -84,15 +84,23 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     if (!confirm('Tem certeza que deseja remover este registro de atividade?')) return;
 
     try {
-      await fetch(`/api/activities/${activityId}`, {
+      const response = await fetch(`/api/activities/${activityId}`, {
         method: 'DELETE',
       });
-      loadRecentActivities();
-      onUpdate();
-      alert('Registro removido com sucesso!');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadRecentActivities();
+        onUpdate();
+        alert('Registro removido com sucesso!');
+      } else {
+        const errorMessage = data.error || 'Erro ao remover registro';
+        alert(`Erro: ${errorMessage}`);
+      }
     } catch (error) {
       console.error('Error deleting activity:', error);
-      alert('Erro ao remover registro');
+      alert('Erro ao remover registro. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -100,7 +108,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     if (!childId) return;
 
     try {
-      await fetch('/api/activities', {
+      const response = await fetch('/api/activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -112,11 +120,20 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
           date: selectedDate, // Use selected date
         }),
       });
-      onUpdate();
-      alert(`Atividade "${activity.name}" registrada para ${formatDate(selectedDate)}!`);
+
+      const data = await response.json();
+
+      if (response.ok) {
+        onUpdate();
+        loadRecentActivities(); // Reload activities to show the new one
+        alert(`Atividade "${activity.name}" registrada para ${formatDate(selectedDate)}!`);
+      } else {
+        const errorMessage = data.error || 'Erro ao registrar atividade';
+        alert(`Erro: ${errorMessage}`);
+      }
     } catch (error) {
       console.error('Error registering activity:', error);
-      alert('Erro ao registrar atividade');
+      alert('Erro ao registrar atividade. Verifique sua conexão e tente novamente.');
     }
   };
 

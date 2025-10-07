@@ -154,7 +154,7 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     if (!points) return;
 
     try {
-      await fetch('/api/custom-activities', {
+      const response = await fetch('/api/custom-activities', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -165,11 +165,19 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
           category,
         }),
       });
-      loadCustomActivities();
-      alert('Atividade adicionada com sucesso!');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadCustomActivities();
+        alert('Atividade adicionada com sucesso!');
+      } else {
+        const errorMessage = data.error || 'Erro ao adicionar atividade';
+        alert(`Erro: ${errorMessage}`);
+      }
     } catch (error) {
       console.error('Error adding custom activity:', error);
-      alert('Erro ao adicionar atividade');
+      alert('Erro ao adicionar atividade. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -177,14 +185,22 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     if (!confirm('Tem certeza que deseja excluir esta atividade?')) return;
 
     try {
-      await fetch(`/api/custom-activities/${id}`, {
+      const response = await fetch(`/api/custom-activities/${id}`, {
         method: 'DELETE',
       });
-      loadCustomActivities();
-      alert('Atividade excluída com sucesso!');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadCustomActivities();
+        alert('Atividade excluída com sucesso!');
+      } else {
+        const errorMessage = data.error || 'Erro ao excluir atividade';
+        alert(`Erro: ${errorMessage}`);
+      }
     } catch (error) {
       console.error('Error deleting custom activity:', error);
-      alert('Erro ao excluir atividade');
+      alert('Erro ao excluir atividade. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -210,7 +226,7 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     }
 
     try {
-      await fetch(`/api/custom-activities/${editingActivity.id}`, {
+      const response = await fetch(`/api/custom-activities/${editingActivity.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -218,12 +234,20 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
           points: editPoints,
         }),
       });
-      loadCustomActivities();
-      closeEditModal();
-      alert('Atividade atualizada com sucesso!');
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadCustomActivities();
+        closeEditModal();
+        alert('Atividade atualizada com sucesso!');
+      } else {
+        const errorMessage = data.error || 'Erro ao atualizar atividade';
+        alert(`Erro: ${errorMessage}`);
+      }
     } catch (error) {
       console.error('Error updating custom activity:', error);
-      alert('Erro ao atualizar atividade');
+      alert('Erro ao atualizar atividade. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -385,15 +409,18 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert('Informações do pai/mãe salvas com sucesso!');
         setParentExists(true);
       } else {
-        alert('Erro ao salvar informações');
+        const errorMessage = data.error || 'Erro ao salvar informações';
+        alert(`Erro: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error saving parent info:', error);
-      alert('Erro ao salvar informações');
+      alert('Erro ao salvar informações. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -418,15 +445,18 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert('Saldo inicial e data de início salvos com sucesso!');
         onUpdate();
       } else {
-        alert('Erro ao salvar configurações');
+        const errorMessage = data.error || 'Erro ao salvar configurações';
+        alert(`Erro: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error saving child initial balance:', error);
-      alert('Erro ao salvar configurações');
+      alert('Erro ao salvar configurações. Verifique sua conexão e tente novamente.');
     }
   };
 

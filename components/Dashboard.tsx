@@ -56,16 +56,24 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     if (!confirm('Tem certeza que deseja excluir esta entrada?')) return;
 
     try {
-      await fetch(`/api/activities/${activityId}`, {
+      const response = await fetch(`/api/activities/${activityId}`, {
         method: 'DELETE',
       });
-      loadActivities();
-      alert('Entrada excluída com sucesso!');
-      // Optionally trigger parent update to refresh points
-      window.location.reload();
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadActivities();
+        alert('Entrada excluída com sucesso!');
+        // Reload to refresh points
+        window.location.reload();
+      } else {
+        const errorMessage = data.error || 'Erro ao excluir entrada';
+        alert(`Erro: ${errorMessage}`);
+      }
     } catch (error) {
       console.error('Error deleting activity entry:', error);
-      alert('Erro ao excluir entrada');
+      alert('Erro ao excluir entrada. Verifique sua conexão e tente novamente.');
     }
   };
 
