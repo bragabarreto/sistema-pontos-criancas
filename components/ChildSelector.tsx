@@ -1,14 +1,14 @@
 'use client';
 
 interface ChildSelectorProps {
-  children: any[];
+  childrenList: any[];
   currentChild: number | null;
   onSelectChild: (childId: number) => void;
 }
 
-export function ChildSelector({ children, currentChild, onSelectChild }: ChildSelectorProps) {
-  // Ensure children is an array to prevent .map errors
-  const childrenArray = Array.isArray(children) ? children : [];
+export function ChildSelector({ childrenList, currentChild, onSelectChild }: ChildSelectorProps) {
+  // Ensure childrenList is an array to prevent .map errors
+  const childrenArray = Array.isArray(childrenList) ? childrenList : [];
   
   return (
     <div className="flex gap-4 mb-6">

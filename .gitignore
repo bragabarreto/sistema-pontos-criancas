@@ -37,3 +37,13 @@ next-env.d.ts
 
 # drizzle
 /drizzle
+
+# legacy files (pre Next.js migration)
+app.html
+app-backup.html
+app.js
+index.html
+index_backup.html
+sistema-*.html
+temp_js.js
+exemplo-gist.md
