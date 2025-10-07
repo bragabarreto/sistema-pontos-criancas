@@ -11,24 +11,37 @@ export function Dashboard({ childId, childData }: DashboardProps) {
   const [activities, setActivities] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState('');
+  const [currentTime, setCurrentTime] = useState('');
   const [currentWeekday, setCurrentWeekday] = useState('');
 
   useEffect(() => {
     if (childId) {
       loadActivities();
     }
-    updateCurrentDate();
+    updateCurrentDateTime();
+    
+    // Update time every second for real-time clock
+    const interval = setInterval(updateCurrentDateTime, 1000);
+    
+    return () => clearInterval(interval);
   }, [childId]);
 
-  const updateCurrentDate = () => {
+  const updateCurrentDateTime = () => {
+    // Get current time in Fortaleza timezone
     const now = new Date();
-    const weekdays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-    const day = String(now.getDate()).padStart(2, '0');
-    const month = String(now.getMonth() + 1).padStart(2, '0');
-    const year = now.getFullYear();
+    const fortalezaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
     
-    setCurrentWeekday(weekdays[now.getDay()]);
+    const weekdays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
+    const day = String(fortalezaTime.getDate()).padStart(2, '0');
+    const month = String(fortalezaTime.getMonth() + 1).padStart(2, '0');
+    const year = fortalezaTime.getFullYear();
+    const hours = String(fortalezaTime.getHours()).padStart(2, '0');
+    const minutes = String(fortalezaTime.getMinutes()).padStart(2, '0');
+    const seconds = String(fortalezaTime.getSeconds()).padStart(2, '0');
+    
+    setCurrentWeekday(weekdays[fortalezaTime.getDay()]);
     setCurrentDate(`${day}/${month}/${year}`);
+    setCurrentTime(`${hours}:${minutes}:${seconds}`);
   };
 
   const loadActivities = async () => {
@@ -88,13 +101,21 @@ export function Dashboard({ childId, childData }: DashboardProps) {
   return (
     <div>
       <div className="mb-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg shadow-md">
-        <h2 className="text-2xl font-bold mb-1">📊 Dashboard - {childData.name}</h2>
-        <p className="text-lg">
-          <span className="font-semibold">{currentWeekday}</span> - {currentDate}
-        </p>
-        <p className="text-sm mt-1 opacity-90">
-          ℹ️ As atribuições imediatas são referentes ao dia em curso. Use o calendário para registros de outros dias.
-        </p>
+        <h2 className="text-2xl font-bold mb-2">📊 Dashboard - {childData.name}</h2>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+          <div>
+            <p className="text-lg">
+              <span className="font-semibold">{currentWeekday}</span> - {currentDate}
+            </p>
+            <p className="text-sm opacity-90">
+              ℹ️ As atribuições imediatas são referentes ao dia em curso.
+            </p>
+          </div>
+          <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
+            <p className="text-xs opacity-90 mb-1">🕐 Horário de Fortaleza - CE</p>
+            <p className="text-3xl font-bold font-mono tracking-wider">{currentTime}</p>
+          </div>
+        </div>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -130,7 +151,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                 <div className="flex-1">
                   <p className="font-semibold">{activity.name}</p>
                   <p className="text-sm text-gray-500">
-                    {new Date(activity.date).toLocaleDateString('pt-BR')} às {new Date(activity.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    {new Date(activity.date).toLocaleDateString('pt-BR', { timeZone: 'America/Fortaleza' })} às {new Date(activity.date).toLocaleTimeString('pt-BR', { timeZone: 'America/Fortaleza', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 <div className="text-right flex items-center gap-3">

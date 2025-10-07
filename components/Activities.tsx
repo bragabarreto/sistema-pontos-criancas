@@ -511,11 +511,13 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
                   <p className="font-semibold">{activity.name}</p>
                   <p className="text-sm text-gray-500">
                     {new Date(activity.date).toLocaleDateString('pt-BR', { 
+                      timeZone: 'America/Fortaleza',
                       weekday: 'short', 
                       day: '2-digit', 
                       month: '2-digit', 
                       year: 'numeric' 
                     })} às {new Date(activity.date).toLocaleTimeString('pt-BR', { 
+                      timeZone: 'America/Fortaleza',
                       hour: '2-digit', 
                       minute: '2-digit' 
                     })}

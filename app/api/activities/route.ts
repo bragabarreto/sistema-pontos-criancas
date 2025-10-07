@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { activities, children } from '@/lib/schema';
 import { eq, desc } from 'drizzle-orm';
+import { getFortalezaNow, dateStringToFortalezaTimestamp } from '@/lib/timezone';
 
 export async function GET(request: Request) {
   try {
@@ -48,13 +49,19 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Create activity
+    // Create activity with Fortaleza timezone
+    // If date is provided (YYYY-MM-DD), use current time in Fortaleza for that date
+    // If no date is provided, use current date/time in Fortaleza
+    const activityDate = date 
+      ? dateStringToFortalezaTimestamp(date) 
+      : getFortalezaNow();
+    
     const newActivity = await db.insert(activities).values({
       childId: parsedChildId,
       name,
       points: parsedPoints,
       category,
-      date: date ? new Date(date) : new Date(),
+      date: activityDate,
       multiplier: parsedMultiplier,
     }).returning();
 
