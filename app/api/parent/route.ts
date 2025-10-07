@@ -25,8 +25,30 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { name, gender, appStartDate } = body;
 
-    if (!name || !appStartDate) {
-      return NextResponse.json({ error: 'Name and app start date are required' }, { status: 400 });
+    // Validate required fields
+    if (!name || !name.trim()) {
+      return NextResponse.json({ 
+        error: 'O nome é obrigatório' 
+      }, { status: 400 });
+    }
+
+    if (!appStartDate) {
+      return NextResponse.json({ 
+        error: 'A data de início do app é obrigatória' 
+      }, { status: 400 });
+    }
+
+    // Validate date format
+    let parsedDate: Date;
+    try {
+      parsedDate = new Date(appStartDate);
+      if (isNaN(parsedDate.getTime())) {
+        throw new Error('Invalid date');
+      }
+    } catch (e) {
+      return NextResponse.json({ 
+        error: 'Data inválida. Use o formato correto (YYYY-MM-DD)' 
+      }, { status: 400 });
     }
 
     // Check if parent already exists
@@ -36,9 +58,9 @@ export async function POST(request: Request) {
       // Update existing parent
       const updated = await db.update(parentUser)
         .set({
-          name,
-          gender,
-          appStartDate: new Date(appStartDate),
+          name: name.trim(),
+          gender: gender || null,
+          appStartDate: parsedDate,
           updatedAt: new Date(),
         })
         .where(eq(parentUser.id, existing[0].id))
@@ -49,9 +71,9 @@ export async function POST(request: Request) {
       // Create new parent
       const created = await db.insert(parentUser)
         .values({
-          name,
-          gender,
-          appStartDate: new Date(appStartDate),
+          name: name.trim(),
+          gender: gender || null,
+          appStartDate: parsedDate,
         })
         .returning();
       
@@ -59,6 +81,9 @@ export async function POST(request: Request) {
     }
   } catch (error) {
     console.error('Error saving parent user:', error);
-    return NextResponse.json({ error: 'Failed to save parent user' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Falha ao salvar informações do pai/mãe', 
+      details: error instanceof Error ? error.message : 'Erro desconhecido' 
+    }, { status: 500 });
   }
 }

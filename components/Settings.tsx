@@ -385,15 +385,18 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert('Informações do pai/mãe salvas com sucesso!');
         setParentExists(true);
       } else {
-        alert('Erro ao salvar informações');
+        const errorMessage = data.error || 'Erro ao salvar informações';
+        alert(`Erro: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error saving parent info:', error);
-      alert('Erro ao salvar informações');
+      alert('Erro ao salvar informações. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -418,15 +421,18 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         alert('Saldo inicial e data de início salvos com sucesso!');
         onUpdate();
       } else {
-        alert('Erro ao salvar configurações');
+        const errorMessage = data.error || 'Erro ao salvar configurações';
+        alert(`Erro: ${errorMessage}`);
       }
     } catch (error) {
       console.error('Error saving child initial balance:', error);
-      alert('Erro ao salvar configurações');
+      alert('Erro ao salvar configurações. Verifique sua conexão e tente novamente.');
     }
   };
 
