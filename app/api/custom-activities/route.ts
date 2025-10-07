@@ -30,10 +30,27 @@ export async function POST(request: Request) {
     const body = await request.json();
     const { childId, activityId, name, points, category } = body;
 
+    // Validate required fields
+    if (!childId || !activityId || !name || points === undefined || !category) {
+      return NextResponse.json({ 
+        error: 'Missing required fields: childId, activityId, name, points, and category are required' 
+      }, { status: 400 });
+    }
+
+    // Validate data types
+    const parsedChildId = parseInt(childId);
+    const parsedPoints = parseInt(points);
+
+    if (isNaN(parsedChildId) || isNaN(parsedPoints)) {
+      return NextResponse.json({ 
+        error: 'Invalid data types: childId and points must be numbers' 
+      }, { status: 400 });
+    }
+
     // Get the max orderIndex for this child and category
     const existingActivities = await db.select()
       .from(customActivities)
-      .where(eq(customActivities.childId, childId));
+      .where(eq(customActivities.childId, parsedChildId));
     
     const categoryActivities = existingActivities.filter(a => a.category === category);
     const maxOrder = categoryActivities.length > 0 
@@ -41,10 +58,10 @@ export async function POST(request: Request) {
       : -1;
 
     const newCustomActivity = await db.insert(customActivities).values({
-      childId,
+      childId: parsedChildId,
       activityId,
       name,
-      points,
+      points: parsedPoints,
       category,
       orderIndex: maxOrder + 1,
     }).returning();
@@ -52,6 +69,9 @@ export async function POST(request: Request) {
     return NextResponse.json(newCustomActivity[0], { status: 201 });
   } catch (error) {
     console.error('Error creating custom activity:', error);
-    return NextResponse.json({ error: 'Failed to create custom activity' }, { status: 500 });
+    return NextResponse.json({ 
+      error: 'Failed to create custom activity',
+      details: error instanceof Error ? error.message : 'Unknown error'
+    }, { status: 500 });
   }
 }
