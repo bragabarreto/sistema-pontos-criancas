@@ -140,6 +140,8 @@ vercel
 - [QUICKSTART.md](./QUICKSTART.md) - Guia rápido de início
 - [DEPLOYMENT.md](./DEPLOYMENT.md) - Instruções detalhadas de deploy
 - [IMPLEMENTATION.md](./IMPLEMENTATION.md) - Detalhes técnicos da implementação
+- [TEST_REPORT.md](./TEST_REPORT.md) - Relatório de testes implementados
+- [__tests__/README.md](./__tests__/README.md) - Documentação dos testes automatizados
 
 ## 🗄️ Estrutura do Banco de Dados
 
@@ -198,20 +200,58 @@ npm run db:studio
 ## 🔧 Scripts Disponíveis
 
 ```bash
-npm run dev          # Inicia servidor de desenvolvimento
-npm run build        # Build para produção
-npm run start        # Inicia servidor de produção
-npm run lint         # Executa o linter
-npm run db:generate  # Gera migrações do banco
-npm run db:push      # Aplica migrações no banco
-npm run db:studio    # Abre Drizzle Studio
+npm run dev             # Inicia servidor de desenvolvimento
+npm run build           # Build para produção
+npm run start           # Inicia servidor de produção
+npm run lint            # Executa o linter
+npm test                # Executa todos os testes
+npm run test:api        # Executa testes de API
+npm run test:integration # Executa testes de integração
+npm run db:generate     # Gera migrações do banco
+npm run db:push         # Aplica migrações no banco
+npm run db:studio       # Abre Drizzle Studio
 ```
+
+## 🧪 Testes Automatizados
+
+O sistema inclui **46 testes automatizados** cobrindo:
+
+- ✅ **Cadastro de pais** - Validação completa de campos e sanitização
+- ✅ **Registro de atividades** - Validação de entrada e prevenção de SQL injection
+- ✅ **Cadastro de crianças** - Criação e listagem com tratamento robusto de erros
+- ✅ **Atividades personalizadas** - CRUD completo com validações
+- ✅ **Testes de integração** - Fluxos completos de uso
+- ✅ **Testes de segurança** - Prevenção de SQL injection
+- ✅ **Testes de robustez** - Tratamento de erros que previne crashes no frontend
+
+### Executar Testes
+
+```bash
+# Executar todos os testes (46 testes)
+npm test
+
+# Executar apenas testes de API
+npm run test:api
+
+# Executar apenas testes de integração
+npm run test:integration
+
+# Executar teste específico
+npm test __tests__/api/parent.test.ts
+```
+
+**Nota**: Os testes validam a lógica de validação e segurança dos endpoints. Alguns testes requerem que o servidor Next.js esteja rodando (`npm run dev`).
+
+Para mais detalhes, veja:
+- [TEST_REPORT.md](./TEST_REPORT.md) - Relatório completo de testes
+- [__tests__/README.md](./__tests__/README.md) - Guia de testes
 
 ## 🔐 Variáveis de Ambiente
 
 | Variável | Descrição | Obrigatória |
 |----------|-----------|-------------|
 | `DATABASE_URL` | Connection string do PostgreSQL (Neon) | Sim |
+| `TEST_BASE_URL` | URL base para testes (padrão: http://localhost:3000) | Não |
 
 ## 📝 Notas Importantes
 

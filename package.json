@@ -7,6 +7,9 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
+    "test": "node --test --experimental-strip-types __tests__/**/*.test.ts",
+    "test:api": "node --test --experimental-strip-types __tests__/api/*.test.ts",
+    "test:integration": "node --test --experimental-strip-types __tests__/integration.test.ts",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
