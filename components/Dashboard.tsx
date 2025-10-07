@@ -114,12 +114,13 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     .filter(a => a.points > 0)
     .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
   
+  // Calculate negative points as absolute value for display and calculation
   const negativePointsToday = todayActivities
     .filter(a => a.points < 0)
-    .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
+    .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
   
-  // Current balance = initial balance + positive points - negative points (note: negativePointsToday is already negative)
-  const currentBalance = initialBalance + positivePointsToday + negativePointsToday;
+  // Current balance = initial balance + positive points - negative points
+  const currentBalance = initialBalance + positivePointsToday - negativePointsToday;
 
   return (
     <div>
@@ -154,7 +155,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
         
         <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Pontos Negativos Hoje</h3>
-          <p className="text-3xl font-bold">{negativePointsToday}</p>
+          <p className="text-3xl font-bold">-{negativePointsToday}</p>
         </div>
         
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
