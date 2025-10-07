@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
-import { customActivities } from '@/lib/schema';
+import { customActivities, children } from '@/lib/schema';
 import { eq, asc } from 'drizzle-orm';
 
 export async function GET(request: Request) {
@@ -47,26 +47,42 @@ export async function POST(request: Request) {
       }, { status: 400 });
     }
 
-    // Get the max orderIndex for this child and category
-    const existingActivities = await db.select()
-      .from(customActivities)
-      .where(eq(customActivities.childId, parsedChildId));
+    // Get all children to create activity for both
+    const allChildren = await db.select().from(children);
     
-    const categoryActivities = existingActivities.filter(a => a.category === category);
-    const maxOrder = categoryActivities.length > 0 
-      ? Math.max(...categoryActivities.map(a => a.orderIndex || 0))
-      : -1;
+    const newActivities = [];
+    
+    // Create activity for each child
+    for (const child of allChildren) {
+      // Get the max orderIndex for this child and category
+      const existingActivities = await db.select()
+        .from(customActivities)
+        .where(eq(customActivities.childId, child.id));
+      
+      const categoryActivities = existingActivities.filter(a => a.category === category);
+      const maxOrder = categoryActivities.length > 0 
+        ? Math.max(...categoryActivities.map(a => a.orderIndex || 0))
+        : -1;
 
-    const newCustomActivity = await db.insert(customActivities).values({
-      childId: parsedChildId,
-      activityId,
-      name,
-      points: parsedPoints,
-      category,
-      orderIndex: maxOrder + 1,
-    }).returning();
+      // Generate unique activityId for each child
+      const baseActivityId = activityId.replace(/^(luiza|miguel)-/, '');
+      const childActivityId = `${child.name.toLowerCase()}-${baseActivityId}`;
 
-    return NextResponse.json(newCustomActivity[0], { status: 201 });
+      const newCustomActivity = await db.insert(customActivities).values({
+        childId: child.id,
+        activityId: childActivityId,
+        name,
+        points: parsedPoints,
+        category,
+        orderIndex: maxOrder + 1,
+      }).returning();
+      
+      newActivities.push(newCustomActivity[0]);
+    }
+
+    // Return the activity for the requesting child
+    const requestedActivity = newActivities.find(a => a.childId === parsedChildId);
+    return NextResponse.json(requestedActivity || newActivities[0], { status: 201 });
   } catch (error) {
     console.error('Error creating custom activity:', error);
     return NextResponse.json({ 
