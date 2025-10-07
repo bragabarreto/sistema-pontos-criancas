@@ -6,13 +6,12 @@
 
 /**
  * Get current date and time in Fortaleza timezone
- * @returns Date object representing current time in Fortaleza
+ * @returns Date object that when displayed with America/Fortaleza timezone shows the correct time
  */
 export function getFortalezaNow(): Date {
-  // Create date in Fortaleza timezone (UTC-3)
-  const now = new Date();
-  const fortalezaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-  return fortalezaTime;
+  // Simply return the current time - the database will store it as UTC
+  // and when we display it with timeZone: 'America/Fortaleza', it will show correctly
+  return new Date();
 }
 
 /**
