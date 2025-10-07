@@ -15,6 +15,10 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedActivityForDate, setSelectedActivityForDate] = useState<any>(null);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [editingActivity, setEditingActivity] = useState<any>(null);
+  const [editName, setEditName] = useState('');
+  const [editPoints, setEditPoints] = useState(0);
 
   useEffect(() => {
     if (childId) {
@@ -163,6 +167,103 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     return `${weekdays[date.getDay()]}, ${day}/${month}/${year}`;
   };
 
+  // Edit custom activity
+  const openEditModal = (activity: any) => {
+    setEditingActivity(activity);
+    setEditName(activity.name);
+    setEditPoints(activity.points);
+    setEditModalOpen(true);
+  };
+
+  const closeEditModal = () => {
+    setEditModalOpen(false);
+    setEditingActivity(null);
+    setEditName('');
+    setEditPoints(0);
+  };
+
+  const saveEditedActivity = async () => {
+    if (!editingActivity || !editName || editPoints <= 0) {
+      alert('Por favor, preencha todos os campos corretamente');
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/custom-activities/${editingActivity.id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: editName,
+          points: editPoints,
+        }),
+      });
+
+      if (response.ok) {
+        loadCustomActivities();
+        closeEditModal();
+        alert('Atividade atualizada com sucesso!');
+      } else {
+        const data = await response.json();
+        alert(`Erro: ${data.error || 'Erro ao atualizar atividade'}`);
+      }
+    } catch (error) {
+      console.error('Error updating activity:', error);
+      alert('Erro ao atualizar atividade');
+    }
+  };
+
+  // Delete custom activity
+  const deleteCustomActivity = async (activityId: number) => {
+    if (!confirm('Tem certeza que deseja excluir esta atividade personalizada?')) return;
+
+    try {
+      const response = await fetch(`/api/custom-activities/${activityId}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        loadCustomActivities();
+        onUpdate();
+        alert('Atividade excluída com sucesso!');
+      } else {
+        const data = await response.json();
+        alert(`Erro: ${data.error || 'Erro ao excluir atividade'}`);
+      }
+    } catch (error) {
+      console.error('Error deleting custom activity:', error);
+      alert('Erro ao excluir atividade');
+    }
+  };
+
+  // Move custom activity
+  const moveActivity = async (activity: any, direction: 'up' | 'down') => {
+    const categoryActivities = customActivities.filter(a => a.category === activity.category);
+    const currentIndex = categoryActivities.findIndex(a => a.id === activity.id);
+    
+    if (direction === 'up' && currentIndex === 0) return;
+    if (direction === 'down' && currentIndex === categoryActivities.length - 1) return;
+
+    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+    const otherActivity = categoryActivities[newIndex];
+
+    try {
+      // Swap order indices
+      await fetch('/api/custom-activities/reorder', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          activity1Id: activity.id,
+          activity2Id: otherActivity.id,
+        }),
+      });
+
+      loadCustomActivities();
+    } catch (error) {
+      console.error('Error reordering activities:', error);
+      alert('Erro ao reordenar atividades');
+    }
+  };
+
   if (!childId) {
     return <div className="text-center text-gray-500">Selecione uma criança</div>;
   }
@@ -218,20 +319,104 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
             <p className="text-sm text-gray-600 mb-3">
               Multiplicador: {multipliers[category] || 1}x
             </p>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+            <div className="space-y-2">
               {categorizedActivities[category as keyof typeof categorizedActivities].length === 0 ? (
                 <p className="text-gray-500 text-sm">Nenhuma atividade cadastrada</p>
               ) : (
-                categorizedActivities[category as keyof typeof categorizedActivities].map((activity) => (
-                  <button
-                    key={activity.id}
-                    onClick={() => registerActivity(activity, category)}
-                    className="bg-white hover:bg-gray-50 border border-gray-300 rounded-md p-3 text-left transition-all hover:shadow-md"
-                  >
-                    <p className="font-semibold">{activity.name}</p>
-                    <p className="text-sm text-gray-600">{activity.points} pontos</p>
-                  </button>
-                ))
+                categorizedActivities[category as keyof typeof categorizedActivities].map((activity, index) => {
+                  const categoryActivities = categorizedActivities[category as keyof typeof categorizedActivities];
+                  const isFirst = index === 0;
+                  const isLast = index === categoryActivities.length - 1;
+                  
+                  return (
+                    <div key={activity.id} className="bg-white rounded-md p-3 border border-gray-300 hover:shadow-md transition-all">
+                      <div className="flex justify-between items-center gap-3">
+                        <div className="flex-1">
+                          <p className="font-semibold text-gray-800">{activity.name}</p>
+                          <p className="text-sm text-gray-600">
+                            {activity.points} pontos base × {multipliers[category] || 1} = {' '}
+                            <span className="font-bold">
+                              {activity.points * (multipliers[category] || 1)} pontos
+                            </span>
+                          </p>
+                        </div>
+                        <div className="flex gap-1 items-center flex-wrap">
+                          {/* Move Up Button */}
+                          <button
+                            onClick={() => moveActivity(activity, 'up')}
+                            disabled={isFirst}
+                            className={`px-2 py-1 rounded text-sm ${
+                              isFirst 
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                : 'bg-purple-500 text-white hover:bg-purple-600'
+                            }`}
+                            title="Mover para cima"
+                          >
+                            ↑
+                          </button>
+                          
+                          {/* Move Down Button */}
+                          <button
+                            onClick={() => moveActivity(activity, 'down')}
+                            disabled={isLast}
+                            className={`px-2 py-1 rounded text-sm ${
+                              isLast 
+                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
+                                : 'bg-purple-500 text-white hover:bg-purple-600'
+                            }`}
+                            title="Mover para baixo"
+                          >
+                            ↓
+                          </button>
+                          
+                          {/* Remove Entry Button (NEW) */}
+                          <button
+                            onClick={() => {
+                              // Remove the most recent entry of this activity
+                              const activityEntries = recentActivities.filter(a => a.name === activity.name);
+                              if (activityEntries.length > 0) {
+                                deleteActivity(activityEntries[0].id);
+                              } else {
+                                alert('Nenhum registro desta atividade encontrado para remover');
+                              }
+                            }}
+                            className="bg-orange-500 text-white px-2 py-1 rounded text-sm hover:bg-orange-600"
+                            title="Retirar atividade (remover última entrada)"
+                          >
+                            -
+                          </button>
+                          
+                          {/* Add Entry Button */}
+                          <button
+                            onClick={() => registerActivity(activity, category)}
+                            className="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600"
+                            title="Atribuir atividade (adicionar pontos)"
+                          >
+                            +
+                          </button>
+                          
+                          {/* Edit Button */}
+                          <button
+                            onClick={() => openEditModal(activity)}
+                            className="bg-yellow-500 text-white px-2 py-1 rounded text-sm hover:bg-yellow-600"
+                            title="Editar atividade"
+                          >
+                            ✏️
+                          </button>
+                          
+                          {/* Delete Button */}
+                          <button
+                            onClick={() => deleteCustomActivity(activity.id)}
+                            className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
+                            title="Excluir atividade"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
               )}
             </div>
           </div>
@@ -287,6 +472,49 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
           </div>
         )}
       </div>
+
+      {/* Edit Activity Modal */}
+      {editModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">✏️ Editar Atividade</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">Nome da Atividade:</label>
+              <input
+                type="text"
+                value={editName}
+                onChange={(e) => setEditName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Nome da atividade"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">Pontos Base:</label>
+              <input
+                type="number"
+                value={editPoints}
+                onChange={(e) => setEditPoints(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Pontos"
+              />
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={saveEditedActivity}
+                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={closeEditModal}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
