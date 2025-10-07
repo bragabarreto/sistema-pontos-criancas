@@ -378,21 +378,21 @@
                             <div class="activity-item">
                                 <span>Escovar os dentes</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Escovar os dentes', -1)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Escovar os dentes')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Escovar os dentes', 1)">+</button>
                                 </div>
                             </div>
                             <div class="activity-item">
                                 <span>Arrumar a cama</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Arrumar a cama', -1)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Arrumar a cama')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Arrumar a cama', 1)">+</button>
                                 </div>
                             </div>
                             <div class="activity-item">
                                 <span>Fazer lição de casa</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Fazer lição de casa', -1)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Fazer lição de casa')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Fazer lição de casa', 1)">+</button>
                                 </div>
                             </div>
@@ -405,14 +405,14 @@
                             <div class="activity-item">
                                 <span>Ajudar em casa</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Ajudar em casa', -50)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Ajudar em casa')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Ajudar em casa', 50)">+</button>
                                 </div>
                             </div>
                             <div class="activity-item">
                                 <span>Nota boa na escola</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Nota boa na escola', -50)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Nota boa na escola')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Nota boa na escola', 50)">+</button>
                                 </div>
                             </div>
@@ -425,14 +425,14 @@
                             <div class="activity-item">
                                 <span>Não escovar os dentes</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Não escovar os dentes', 1)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Não escovar os dentes')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Não escovar os dentes', -1)">+</button>
                                 </div>
                             </div>
                             <div class="activity-item">
                                 <span>Bagunçar o quarto</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Bagunçar o quarto', 1)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Bagunçar o quarto')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Bagunçar o quarto', -1)">+</button>
                                 </div>
                             </div>
@@ -445,14 +445,14 @@
                             <div class="activity-item">
                                 <span>Desobedecer</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Desobedecer', 100)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Desobedecer')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Desobedecer', -100)">+</button>
                                 </div>
                             </div>
                             <div class="activity-item">
                                 <span>Mentir</span>
                                 <div class="activity-controls">
-                                    <button class="activity-btn btn-minus" onclick="addActivity('Mentir', 100)">-</button>
+                                    <button class="activity-btn btn-minus" onclick="removeActivity('Mentir')">-</button>
                                     <button class="activity-btn btn-plus" onclick="addActivity('Mentir', -100)">+</button>
                                 </div>
                             </div>
@@ -643,6 +643,44 @@
             const absPoints = Math.abs(points);
             const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
             showNotification(`${childName} ${action} ${absPoints} pontos por: ${activityName}`);
+        }
+        
+        // Remove most recent activity entry by name
+        function removeActivity(activityName) {
+            console.log('➖ Removendo última entrada da atividade:', activityName);
+            
+            // Find all entries of this activity, sorted by timestamp (most recent first)
+            const activityEntries = systemData[currentChild].activities
+                .filter(a => a.name === activityName)
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (activityEntries.length === 0) {
+                showNotification('Nenhum registro desta atividade encontrado para remover', 'error');
+                return;
+            }
+            
+            // Get the most recent entry
+            const mostRecentEntry = activityEntries[0];
+            
+            // Find its index in the main activities array
+            const entryIndex = systemData[currentChild].activities.findIndex(a => 
+                a.timestamp === mostRecentEntry.timestamp
+            );
+            
+            if (entryIndex > -1) {
+                // Remove points from total
+                systemData[currentChild].totalPoints -= mostRecentEntry.points;
+                
+                // Remove the entry
+                systemData[currentChild].activities.splice(entryIndex, 1);
+                
+                saveData();
+                updateDisplay();
+                
+                const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
+                const absPoints = Math.abs(mostRecentEntry.points);
+                showNotification(`Removido: ${activityName} (${absPoints} pontos) - ${childName}`);
+            }
         }
         
         // Remove today activity

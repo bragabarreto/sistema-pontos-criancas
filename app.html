@@ -1502,8 +1502,8 @@
         }
         
         // Add activity points (ONLY FOR TODAY)
-        function addActivity(category, activityId, multiplier = 1) {
-            console.log('➕ Adicionando pontos da atividade:', category, activityId, multiplier);
+        function addActivity(category, activityId) {
+            console.log('➕ Adicionando pontos da atividade:', category, activityId);
             const activity = systemData[currentChild].customActivities[category].find(a => a.id === activityId);
             if (!activity) return;
             
@@ -1511,9 +1511,9 @@
             const today = new Date().toISOString().split('T')[0];
             
             // Para ações negativas e graves, inverter a lógica dos pontos
-            let finalMultiplier = multiplier;
+            let finalMultiplier = 1;
             if (category === 'negativos' || category === 'graves') {
-                finalMultiplier = -multiplier; // Inverter o sinal
+                finalMultiplier = -1; // Inverter o sinal
             }
             
             const totalPoints = activity.points * systemData.multipliers[category] * finalMultiplier;
@@ -1532,19 +1532,57 @@
             saveData();
             updateDisplay();
             
-            // Determinar ação baseada no resultado final dos pontos
+            // Determinar ação baseada no tipo de atividade
             let action;
             if (category === 'negativos' || category === 'graves') {
-                // Para ações negativas/graves: + perde pontos, - ganha pontos
-                action = multiplier > 0 ? 'perdeu' : 'ganhou';
+                action = 'perdeu';
             } else {
-                // Para ações positivas/especiais: + ganha pontos, - perde pontos
-                action = multiplier > 0 ? 'ganhou' : 'perdeu';
+                action = 'ganhou';
             }
             
             const absPoints = Math.abs(totalPoints);
             const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
             showNotification(`${childName} ${action} ${absPoints} pontos por: ${activity.name} (${today})`);
+        }
+        
+        // Remove most recent activity entry (when - button is clicked)
+        function removeActivity(category, activityId) {
+            console.log('➖ Removendo última entrada da atividade:', category, activityId);
+            const activity = systemData[currentChild].customActivities[category].find(a => a.id === activityId);
+            if (!activity) return;
+            
+            // Find all entries of this activity, sorted by timestamp (most recent first)
+            const activityEntries = systemData[currentChild].activities
+                .filter(a => a.name === activity.name && a.category === category)
+                .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            if (activityEntries.length === 0) {
+                showNotification('Nenhum registro desta atividade encontrado para remover', 'error');
+                return;
+            }
+            
+            // Get the most recent entry
+            const mostRecentEntry = activityEntries[0];
+            
+            // Find its index in the main activities array
+            const entryIndex = systemData[currentChild].activities.findIndex(a => 
+                a.timestamp === mostRecentEntry.timestamp
+            );
+            
+            if (entryIndex > -1) {
+                // Remove points from total
+                systemData[currentChild].totalPoints -= mostRecentEntry.points;
+                
+                // Remove the entry
+                systemData[currentChild].activities.splice(entryIndex, 1);
+                
+                saveData();
+                updateDisplay();
+                
+                const childName = currentChild === 'luiza' ? 'Luiza' : 'Miguel';
+                const absPoints = Math.abs(mostRecentEntry.points);
+                showNotification(`Removido: ${activity.name} (${absPoints} pontos) - ${childName}`);
+            }
         }
         
         // Remove today activity (ONLY TODAY'S ACTIVITIES)
@@ -1906,8 +1944,8 @@
                         <div class="activity-controls">
                             <button class="activity-btn btn-up" onclick="moveActivity('${category}', '${activity.id}', 'up')" title="Mover para cima">↑</button>
                             <button class="activity-btn btn-down" onclick="moveActivity('${category}', '${activity.id}', 'down')" title="Mover para baixo">↓</button>
-                            <button class="activity-btn btn-minus" onclick="addActivity('${category}', '${activity.id}', -1)" title="Remover pontos">-</button>
-                            <button class="activity-btn btn-plus" onclick="addActivity('${category}', '${activity.id}', 1)" title="Adicionar pontos">+</button>
+                            <button class="activity-btn btn-minus" onclick="removeActivity('${category}', '${activity.id}')" title="Remover última entrada desta atividade">-</button>
+                            <button class="activity-btn btn-plus" onclick="addActivity('${category}', '${activity.id}')" title="Adicionar pontos">+</button>
                             <button class="activity-btn btn-edit" onclick="showEditActivityModal('${category}', '${activity.id}')" title="Editar">✏️</button>
                             <button class="activity-btn btn-delete" onclick="deleteActivity('${category}', '${activity.id}')" title="Excluir">🗑️</button>
                         </div>
