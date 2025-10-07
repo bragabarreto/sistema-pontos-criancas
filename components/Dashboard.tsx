@@ -96,7 +96,25 @@ export function Dashboard({ childId, childData }: DashboardProps) {
 
   const totalPoints = childData.totalPoints || 0;
   const initialBalance = childData.initialBalance || 0;
-  const pointsEarned = totalPoints - initialBalance;
+  
+  // Calculate today's points (positive and negative separately)
+  const today = new Date();
+  const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+  
+  const todayActivities = activities.filter(activity => {
+    const activityDate = new Date(activity.date);
+    return activityDate >= todayStart;
+  });
+  
+  const positivePointsToday = todayActivities
+    .filter(activity => activity.points > 0)
+    .reduce((sum, activity) => sum + (activity.points * activity.multiplier), 0);
+  
+  const negativePointsToday = todayActivities
+    .filter(activity => activity.points < 0)
+    .reduce((sum, activity) => sum + Math.abs(activity.points * activity.multiplier), 0);
+  
+  const currentBalance = initialBalance + positivePointsToday - negativePointsToday;
 
   return (
     <div>
@@ -118,20 +136,25 @@ export function Dashboard({ childId, childData }: DashboardProps) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-md">
-          <h3 className="text-sm font-semibold mb-2">Saldo Inicial</h3>
+          <h3 className="text-sm font-semibold mb-2">Saldo Inicial do Dia</h3>
           <p className="text-3xl font-bold">{initialBalance}</p>
         </div>
         
         <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-md">
-          <h3 className="text-sm font-semibold mb-2">Pontos Ganhos</h3>
-          <p className="text-3xl font-bold">{pointsEarned}</p>
+          <h3 className="text-sm font-semibold mb-2">Pontos Positivos (Hoje)</h3>
+          <p className="text-3xl font-bold">+{positivePointsToday}</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-lg shadow-md">
+          <h3 className="text-sm font-semibold mb-2">Pontos Negativos (Hoje)</h3>
+          <p className="text-3xl font-bold">-{negativePointsToday}</p>
         </div>
         
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
-          <h3 className="text-sm font-semibold mb-2">Total de Pontos</h3>
-          <p className="text-3xl font-bold">{totalPoints}</p>
+          <h3 className="text-sm font-semibold mb-2">Saldo Atual</h3>
+          <p className="text-3xl font-bold">{currentBalance}</p>
         </div>
       </div>
 
