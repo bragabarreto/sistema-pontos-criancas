@@ -12,11 +12,11 @@ export async function GET(request: Request) {
       const childActivities = await db.select()
         .from(activities)
         .where(eq(activities.childId, parseInt(childId)))
-        .orderBy(desc(activities.date));
+        .orderBy(desc(activities.createdAt));
       return NextResponse.json(childActivities);
     }
 
-    const allActivities = await db.select().from(activities).orderBy(desc(activities.date));
+    const allActivities = await db.select().from(activities).orderBy(desc(activities.createdAt));
     return NextResponse.json(allActivities);
   } catch (error) {
     console.error('Error fetching activities:', error);
