@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Teste de Timestamp - Sistema de Pontos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 { color: #333; }
+        .activity-item {
+            background: #f9f9f9;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 5px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        button {
+            padding: 8px 16px;
+            margin: 0 5px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .btn-add {
+            background: #4CAF50;
+            color: white;
+        }
+        .btn-remove {
+            background: #f44336;
+            color: white;
+        }
+        .log {
+            background: #f0f0f0;
+            padding: 15px;
+            margin-top: 20px;
+            border-radius: 5px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 12px;
+        }
+        .log-entry {
+            padding: 5px 0;
+            border-bottom: 1px solid #ddd;
+        }
+        .timestamp {
+            color: #666;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Teste de Timestamp - Sistema de Pontos</h1>
+        <p>Este é um exemplo simplificado demonstrando como o timestamp funciona após a correção.</p>
+        
+        <h2>Atividade de Teste: "Escovar os dentes"</h2>
+        <div class="activity-item">
+            <span>Escovar os dentes (10 pontos)</span>
+            <div>
+                <button class="btn-add" onclick="addActivity()">+ Adicionar</button>
+                <button class="btn-remove" onclick="removeActivity()">- Remover Último</button>
+            </div>
+        </div>
+
+        <h3>Registro de Atividades:</h3>
+        <div id="activities-list"></div>
+
+        <h3>Log de Ações:</h3>
+        <div class="log" id="log"></div>
+    </div>
+
+    <script>
+        let activities = [];
+        let logEntries = [];
+
+        function addActivity() {
+            const timestamp = new Date().toISOString();
+            const date = new Date().toISOString().split('T')[0];
+            
+            const activity = {
+                name: 'Escovar os dentes',
+                points: 10,
+                date: date,
+                timestamp: timestamp
+            };
+            
+            activities.push(activity);
+            
+            logEntries.push({
+                action: 'ADICIONAR',
+                timestamp: timestamp,
+                details: `Atividade adicionada: ${activity.name} (+${activity.points} pontos)`
+            });
+            
+            updateDisplay();
+        }
+
+        function removeActivity() {
+            if (activities.length === 0) {
+                alert('Nenhuma atividade para remover!');
+                logEntries.push({
+                    action: 'ERRO',
+                    timestamp: new Date().toISOString(),
+                    details: 'Tentativa de remover: nenhuma atividade encontrada'
+                });
+                updateDisplay();
+                return;
+            }
+
+            // Ordenar por timestamp (mais recente primeiro)
+            activities.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+            
+            // Remover o mais recente
+            const removed = activities.shift();
+            
+            logEntries.push({
+                action: 'REMOVER',
+                timestamp: new Date().toISOString(),
+                details: `Atividade removida: ${removed.name} (timestamp: ${removed.timestamp})`
+            });
+            
+            updateDisplay();
+        }
+
+        function formatTimestamp(isoString) {
+            const date = new Date(isoString);
+            return date.toLocaleString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit'
+            });
+        }
+
+        function updateDisplay() {
+            // Atualizar lista de atividades
+            const activitiesList = document.getElementById('activities-list');
+            
+            if (activities.length === 0) {
+                activitiesList.innerHTML = '<p style="color: #999; font-style: italic;">Nenhuma atividade registrada</p>';
+            } else {
+                // Ordenar por timestamp (mais recente primeiro) para exibição
+                const sortedActivities = [...activities].sort((a, b) => 
+                    new Date(b.timestamp) - new Date(a.timestamp)
+                );
+                
+                activitiesList.innerHTML = sortedActivities.map((activity, index) => `
+                    <div class="activity-item">
+                        <div>
+                            <strong>${activity.name}</strong> - ${activity.points} pontos
+                            <div class="timestamp">
+                                ⏰ ${formatTimestamp(activity.timestamp)}
+                            </div>
+                        </div>
+                        <span style="color: #999;">#${sortedActivities.length - index} (${index === 0 ? 'mais recente' : 'anterior'})</span>
+                    </div>
+                `).join('');
+            }
+
+            // Atualizar log
+            const log = document.getElementById('log');
+            log.innerHTML = [...logEntries].reverse().map(entry => `
+                <div class="log-entry">
+                    <strong style="color: ${entry.action === 'ADICIONAR' ? '#4CAF50' : entry.action === 'REMOVER' ? '#f44336' : '#999'}">
+                        ${entry.action}
+                    </strong>
+                    - ${entry.details}
+                    <div class="timestamp">⏰ ${formatTimestamp(entry.timestamp)}</div>
+                </div>
+            `).join('');
+        }
+
+        // Inicializar display
+        updateDisplay();
+
+        // Adicionar informação inicial no log
+        logEntries.push({
+            action: 'INFO',
+            timestamp: new Date().toISOString(),
+            details: 'Sistema iniciado. Clique em "+ Adicionar" para adicionar atividades e "- Remover Último" para remover a mais recente.'
+        });
+        updateDisplay();
+    </script>
+</body>
+</html>
