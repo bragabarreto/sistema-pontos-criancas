@@ -19,6 +19,10 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
   const [editingActivity, setEditingActivity] = useState<any>(null);
   const [editName, setEditName] = useState('');
   const [editPoints, setEditPoints] = useState(0);
+  const [newActivityModalOpen, setNewActivityModalOpen] = useState(false);
+  const [newActivityCategory, setNewActivityCategory] = useState('');
+  const [newActivityName, setNewActivityName] = useState('');
+  const [newActivityPoints, setNewActivityPoints] = useState(0);
 
   useEffect(() => {
     if (childId) {
@@ -201,7 +205,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
       if (response.ok) {
         loadCustomActivities();
         closeEditModal();
-        alert('Atividade atualizada com sucesso!');
+        alert('Atividade atualizada com sucesso para ambas as crianças!');
       } else {
         const data = await response.json();
         alert(`Erro: ${data.error || 'Erro ao atualizar atividade'}`);
@@ -214,7 +218,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
 
   // Delete custom activity
   const deleteCustomActivity = async (activityId: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta atividade personalizada?')) return;
+    if (!confirm('Tem certeza que deseja excluir esta atividade personalizada? Ela será removida para ambas as crianças (Luiza e Miguel).')) return;
 
     try {
       const response = await fetch(`/api/custom-activities/${activityId}`, {
@@ -224,7 +228,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
       if (response.ok) {
         loadCustomActivities();
         onUpdate();
-        alert('Atividade excluída com sucesso!');
+        alert('Atividade excluída com sucesso para ambas as crianças!');
       } else {
         const data = await response.json();
         alert(`Erro: ${data.error || 'Erro ao excluir atividade'}`);
@@ -247,20 +251,76 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     const otherActivity = categoryActivities[newIndex];
 
     try {
-      // Swap order indices
+      // Swap order indices - now synchronized for both children
       await fetch('/api/custom-activities/reorder', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          activity1Id: activity.id,
-          activity2Id: otherActivity.id,
+          childId,
+          category: activity.category,
+          activityId: activity.activityId,
+          direction,
         }),
       });
 
       loadCustomActivities();
+      alert(`Atividade movida para ${direction === 'up' ? 'cima' : 'baixo'} (sincronizado para ambas as crianças)!`);
     } catch (error) {
       console.error('Error reordering activities:', error);
       alert('Erro ao reordenar atividades');
+    }
+  };
+
+  // Open new activity modal
+  const openNewActivityModal = (category: string) => {
+    setNewActivityCategory(category);
+    setNewActivityName('');
+    setNewActivityPoints(0);
+    setNewActivityModalOpen(true);
+  };
+
+  // Close new activity modal
+  const closeNewActivityModal = () => {
+    setNewActivityModalOpen(false);
+    setNewActivityCategory('');
+    setNewActivityName('');
+    setNewActivityPoints(0);
+  };
+
+  // Save new activity (creates for both children)
+  const saveNewActivity = async () => {
+    if (!newActivityName || newActivityPoints <= 0) {
+      alert('Por favor, preencha todos os campos corretamente');
+      return;
+    }
+
+    try {
+      // Generate a unique activity ID
+      const uniqueId = `custom_${Date.now()}`;
+      
+      const response = await fetch('/api/custom-activities', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          childId,
+          activityId: uniqueId,
+          name: newActivityName,
+          points: newActivityPoints,
+          category: newActivityCategory,
+        }),
+      });
+
+      if (response.ok) {
+        loadCustomActivities();
+        closeNewActivityModal();
+        alert('Atividade criada com sucesso para ambas as crianças!');
+      } else {
+        const data = await response.json();
+        alert(`Erro: ${data.error || 'Erro ao criar atividade'}`);
+      }
+    } catch (error) {
+      console.error('Error creating activity:', error);
+      alert('Erro ao criar atividade');
     }
   };
 
@@ -315,7 +375,16 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
       <div className="space-y-6">
         {Object.entries(categoryConfig).map(([category, config]) => (
           <div key={category} className={`border-2 rounded-lg p-4 ${config.color}`}>
-            <h3 className="text-lg font-bold mb-3">{config.title}</h3>
+            <div className="flex justify-between items-center mb-3">
+              <h3 className="text-lg font-bold">{config.title}</h3>
+              <button
+                onClick={() => openNewActivityModal(category)}
+                className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-blue-700 transition-colors"
+                title="Adicionar nova atividade"
+              >
+                + Nova Atividade
+              </button>
+            </div>
             <p className="text-sm text-gray-600 mb-3">
               Multiplicador: {multipliers[category] || 1}x
             </p>
@@ -498,6 +567,9 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
                 placeholder="Pontos"
               />
             </div>
+            <p className="text-sm text-gray-600 mb-4">
+              ℹ️ Esta alteração será aplicada para ambas as crianças (Luiza e Miguel).
+            </p>
             <div className="flex gap-3">
               <button
                 onClick={saveEditedActivity}
@@ -507,6 +579,61 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
               </button>
               <button
                 onClick={closeEditModal}
+                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* New Activity Modal */}
+      {newActivityModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">➕ Nova Atividade</h3>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">Categoria:</label>
+              <input
+                type="text"
+                value={categoryConfig[newActivityCategory as keyof typeof categoryConfig]?.title || newActivityCategory}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">Nome da Atividade:</label>
+              <input
+                type="text"
+                value={newActivityName}
+                onChange={(e) => setNewActivityName(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Ex: Ler um livro"
+              />
+            </div>
+            <div className="mb-4">
+              <label className="block text-sm font-semibold mb-2">Pontos Base:</label>
+              <input
+                type="number"
+                value={newActivityPoints}
+                onChange={(e) => setNewActivityPoints(parseInt(e.target.value) || 0)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                placeholder="Ex: 1, 2, 5"
+              />
+            </div>
+            <p className="text-sm text-gray-600 mb-4">
+              ℹ️ Esta atividade será criada para ambas as crianças (Luiza e Miguel).
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={saveNewActivity}
+                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
+              >
+                Criar Atividade
+              </button>
+              <button
+                onClick={closeNewActivityModal}
                 className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
               >
                 Cancelar
