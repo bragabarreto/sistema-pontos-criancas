@@ -135,6 +135,23 @@ export default function Home() {
         </div>
 
         <div className="bg-white rounded-lg shadow-lg p-6">
+          {/* Visual indicator of which child's panel is displayed */}
+          {currentChild && selectedChildData && (
+            <div className={`mb-6 p-4 rounded-lg border-2 ${
+              selectedChildData.name === 'Luiza'
+                ? 'bg-pink-50 border-pink-400'
+                : 'bg-blue-50 border-blue-400'
+            }`}>
+              <div className="flex items-center justify-center gap-2">
+                <span className="text-2xl">{selectedChildData.name === 'Luiza' ? '👧' : '👦'}</span>
+                <span className={`text-xl font-bold ${
+                  selectedChildData.name === 'Luiza' ? 'text-pink-600' : 'text-blue-600'
+                }`}>
+                  Painel de {selectedChildData.name}
+                </span>
+              </div>
+            </div>
+          )}
           {currentTab === 'dashboard' && <Dashboard childId={currentChild} childData={selectedChildData} />}
           {currentTab === 'activities' && <Activities childId={currentChild} onUpdate={loadChildren} />}
           {currentTab === 'reports' && <Reports childId={currentChild} />}
