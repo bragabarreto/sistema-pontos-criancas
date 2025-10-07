@@ -86,7 +86,7 @@ export default function Home() {
         </header>
 
         <ChildSelector
-          children={children}
+          childrenList={children}
           currentChild={currentChild}
           onSelectChild={setCurrentChild}
         />
