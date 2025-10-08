@@ -5,10 +5,11 @@ import { calculateDailyBalances, getCurrentBalance, getTodayBalance } from '../l
 describe('Balance Calculator', () => {
   it('should calculate daily balances correctly with no activities', () => {
     const activities: any[] = [];
+    const expenses: any[] = [];
     const initialBalance = 100;
     const startDate = new Date('2024-01-01');
 
-    const balances = calculateDailyBalances(activities, initialBalance, startDate);
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
 
     // Should have balances for each day from start to today
     assert.ok(balances.length > 0, 'Should have at least one day');
@@ -17,6 +18,7 @@ describe('Balance Calculator', () => {
     assert.strictEqual(balances[0].initialBalance, initialBalance);
     assert.strictEqual(balances[0].positivePoints, 0);
     assert.strictEqual(balances[0].negativePoints, 0);
+    assert.strictEqual(balances[0].expenses, 0);
     assert.strictEqual(balances[0].finalBalance, initialBalance);
   });
 
@@ -39,10 +41,11 @@ describe('Balance Calculator', () => {
         category: 'especiais'
       }
     ];
+    const expenses: any[] = [];
     const initialBalance = 100;
     const startDate = new Date('2024-01-01');
 
-    const balances = calculateDailyBalances(activities, initialBalance, startDate);
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
 
     // Find the first day
     const firstDay = balances.find(b => b.dateString.startsWith('01/01/2024'));
@@ -51,6 +54,7 @@ describe('Balance Calculator', () => {
     assert.strictEqual(firstDay!.initialBalance, 100);
     assert.strictEqual(firstDay!.positivePoints, 20); // 10*1 + 5*2
     assert.strictEqual(firstDay!.negativePoints, 0);
+    assert.strictEqual(firstDay!.expenses, 0);
     assert.strictEqual(firstDay!.finalBalance, 120); // 100 + 20
   });
 
@@ -73,10 +77,11 @@ describe('Balance Calculator', () => {
         category: 'graves'
       }
     ];
+    const expenses: any[] = [];
     const initialBalance = 100;
     const startDate = new Date('2024-01-01');
 
-    const balances = calculateDailyBalances(activities, initialBalance, startDate);
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
 
     const firstDay = balances.find(b => b.dateString.startsWith('01/01/2024'));
     
@@ -84,6 +89,7 @@ describe('Balance Calculator', () => {
     assert.strictEqual(firstDay!.initialBalance, 100);
     assert.strictEqual(firstDay!.positivePoints, 0);
     assert.strictEqual(firstDay!.negativePoints, 11); // 5*1 + 3*2
+    assert.strictEqual(firstDay!.expenses, 0);
     assert.strictEqual(firstDay!.finalBalance, 89); // 100 - 11
   });
 
@@ -106,10 +112,11 @@ describe('Balance Calculator', () => {
         category: 'negativos'
       }
     ];
+    const expenses: any[] = [];
     const initialBalance = 100;
     const startDate = new Date('2024-01-01');
 
-    const balances = calculateDailyBalances(activities, initialBalance, startDate);
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
 
     const firstDay = balances.find(b => b.dateString.startsWith('01/01/2024'));
     
@@ -117,7 +124,84 @@ describe('Balance Calculator', () => {
     assert.strictEqual(firstDay!.initialBalance, 100);
     assert.strictEqual(firstDay!.positivePoints, 10);
     assert.strictEqual(firstDay!.negativePoints, 3);
+    assert.strictEqual(firstDay!.expenses, 0);
     assert.strictEqual(firstDay!.finalBalance, 107); // 100 + 10 - 3
+  });
+
+  it('should calculate daily balances with expenses', () => {
+    const activities = [
+      {
+        id: 1,
+        date: new Date('2024-01-01T10:00:00'),
+        points: 10,
+        multiplier: 1,
+        name: 'Good behavior',
+        category: 'positivos'
+      }
+    ];
+    const expenses = [
+      {
+        id: 1,
+        date: new Date('2024-01-01T12:00:00'),
+        amount: 5,
+        description: 'Ice cream'
+      }
+    ];
+    const initialBalance = 100;
+    const startDate = new Date('2024-01-01');
+
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
+
+    const firstDay = balances.find(b => b.dateString.startsWith('01/01/2024'));
+    
+    assert.ok(firstDay, 'Should have data for first day');
+    assert.strictEqual(firstDay!.initialBalance, 100);
+    assert.strictEqual(firstDay!.positivePoints, 10);
+    assert.strictEqual(firstDay!.negativePoints, 0);
+    assert.strictEqual(firstDay!.expenses, 5);
+    assert.strictEqual(firstDay!.finalBalance, 105); // 100 + 10 - 5
+  });
+
+  it('should calculate daily balances with mixed activities and expenses', () => {
+    const activities = [
+      {
+        id: 1,
+        date: new Date('2024-01-01T10:00:00'),
+        points: 20,
+        multiplier: 1,
+        name: 'Good behavior',
+        category: 'positivos'
+      },
+      {
+        id: 2,
+        date: new Date('2024-01-01T14:00:00'),
+        points: -5,
+        multiplier: 1,
+        name: 'Bad behavior',
+        category: 'negativos'
+      }
+    ];
+    const expenses = [
+      {
+        id: 1,
+        date: new Date('2024-01-01T12:00:00'),
+        amount: 8,
+        description: 'Snack'
+      }
+    ];
+    const initialBalance = 100;
+    const startDate = new Date('2024-01-01');
+
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
+
+    const firstDay = balances.find(b => b.dateString.startsWith('01/01/2024'));
+    
+    assert.ok(firstDay, 'Should have data for first day');
+    assert.strictEqual(firstDay!.initialBalance, 100);
+    assert.strictEqual(firstDay!.positivePoints, 20);
+    assert.strictEqual(firstDay!.negativePoints, 5);
+    assert.strictEqual(firstDay!.expenses, 8);
+    assert.strictEqual(firstDay!.finalBalance, 107); // 100 + 20 - 5 - 8
   });
 
   it('should carry over balance to next day', () => {
@@ -139,10 +223,11 @@ describe('Balance Calculator', () => {
         category: 'positivos'
       }
     ];
+    const expenses: any[] = [];
     const initialBalance = 100;
     const startDate = new Date('2024-01-01');
 
-    const balances = calculateDailyBalances(activities, initialBalance, startDate);
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
 
     const day1 = balances.find(b => b.dateString.startsWith('01/01/2024'));
     const day2 = balances.find(b => b.dateString.startsWith('02/01/2024'));
@@ -170,10 +255,11 @@ describe('Balance Calculator', () => {
         category: 'positivos'
       }
     ];
+    const expenses: any[] = [];
     const initialBalance = 100;
     const startDate = new Date('2024-01-01');
 
-    const balances = calculateDailyBalances(activities, initialBalance, startDate);
+    const balances = calculateDailyBalances(activities, expenses, initialBalance, startDate);
     const currentBalance = getCurrentBalance(balances);
     
     // Current balance should be the final balance of the last day

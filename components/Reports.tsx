@@ -8,12 +8,14 @@ interface ReportsProps {
 
 export function Reports({ childId }: ReportsProps) {
   const [activities, setActivities] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [period, setPeriod] = useState('week'); // week, month, all
 
   useEffect(() => {
     if (childId) {
       loadActivities();
+      loadExpenses();
     }
   }, [childId]);
 
@@ -35,6 +37,24 @@ export function Reports({ childId }: ReportsProps) {
       setActivities([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadExpenses = async () => {
+    try {
+      const response = await fetch(`/api/expenses?childId=${childId}`);
+      const data = await response.json();
+      
+      // Validate that the response is an array
+      if (Array.isArray(data)) {
+        setExpenses(data);
+      } else {
+        console.error('Invalid expenses response: expected array, got:', typeof data);
+        setExpenses([]);
+      }
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+      setExpenses([]);
     }
   };
 
@@ -76,10 +96,23 @@ export function Reports({ childId }: ReportsProps) {
     return true; // all
   });
 
+  const filteredExpenses = expenses.filter(expense => {
+    const expenseDate = new Date(expense.date);
+    if (period === 'week') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      return expenseDate >= weekAgo;
+    } else if (period === 'month') {
+      const monthAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+      return expenseDate >= monthAgo;
+    }
+    return true; // all
+  });
+
   const stats = {
-    total: filteredActivities.reduce((sum, a) => sum + (a.points * a.multiplier), 0),
+    total: filteredActivities.reduce((sum, a) => sum + (a.points * a.multiplier), 0) - filteredExpenses.reduce((sum, e) => sum + e.amount, 0),
     positive: filteredActivities.filter(a => a.points > 0).reduce((sum, a) => sum + (a.points * a.multiplier), 0),
     negative: filteredActivities.filter(a => a.points < 0).reduce((sum, a) => sum + (a.points * a.multiplier), 0),
+    expenses: filteredExpenses.reduce((sum, e) => sum + e.amount, 0),
     count: filteredActivities.length,
   };
 
@@ -108,7 +141,7 @@ export function Reports({ childId }: ReportsProps) {
         </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-blue-100 p-4 rounded-lg">
           <h3 className="text-sm font-semibold text-gray-600">Total de Atividades</h3>
           <p className="text-2xl font-bold">{stats.count}</p>
@@ -120,6 +153,10 @@ export function Reports({ childId }: ReportsProps) {
         <div className="bg-red-100 p-4 rounded-lg">
           <h3 className="text-sm font-semibold text-gray-600">Pontos Negativos</h3>
           <p className="text-2xl font-bold text-red-600">{stats.negative}</p>
+        </div>
+        <div className="bg-orange-100 p-4 rounded-lg">
+          <h3 className="text-sm font-semibold text-gray-600">Total de Gastos</h3>
+          <p className="text-2xl font-bold text-orange-600">-{stats.expenses}</p>
         </div>
         <div className="bg-purple-100 p-4 rounded-lg">
           <h3 className="text-sm font-semibold text-gray-600">Saldo do Período</h3>
@@ -164,6 +201,38 @@ export function Reports({ childId }: ReportsProps) {
                   >
                     🗑️
                   </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <div className="mt-6 bg-gray-50 p-6 rounded-lg">
+        <h3 className="text-xl font-bold mb-4">Histórico de Gastos</h3>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {filteredExpenses.length === 0 ? (
+            <p className="text-gray-500">Nenhum gasto no período selecionado.</p>
+          ) : (
+            filteredExpenses.map((expense) => (
+              <div
+                key={expense.id}
+                className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm"
+              >
+                <div className="flex-1">
+                  <p className="font-semibold">{expense.description}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(expense.date).toLocaleDateString('pt-BR', {
+                      day: '2-digit',
+                      month: '2-digit',
+                      year: 'numeric',
+                    })}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-orange-600">
+                    -{expense.amount}
+                  </p>
                 </div>
               </div>
             ))
