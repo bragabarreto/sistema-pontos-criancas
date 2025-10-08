@@ -8,19 +8,23 @@ export interface DailyBalance {
   initialBalance: number;
   positivePoints: number;
   negativePoints: number;
+  expenses: number;
   finalBalance: number;
   activities: any[];
+  expensesList: any[];
 }
 
 /**
  * Calculate daily balances from start date to today
  * @param activities - All activities for the child
+ * @param expenses - All expenses for the child
  * @param childInitialBalance - Initial balance set in child settings
  * @param childStartDate - Start date set in child settings
  * @returns Array of daily balances
  */
 export function calculateDailyBalances(
   activities: any[],
+  expenses: any[],
   childInitialBalance: number,
   childStartDate: Date | null
 ): DailyBalance[] {
@@ -86,9 +90,19 @@ export function calculateDailyBalances(
       .filter(a => a.points < 0)
       .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
 
+    // Filter expenses for this day
+    const dayExpenses = expenses.filter(expense => {
+      const expenseDate = new Date(expense.date);
+      const expenseFortaleza = new Date(expenseDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
+      return expenseFortaleza >= dayStart && expenseFortaleza <= dayEnd;
+    });
+
+    // Calculate total expenses for the day
+    const totalExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
+
     // Calculate final balance for the day
     const initialBalanceOfDay = currentBalance;
-    const finalBalanceOfDay = currentBalance + positivePoints - negativePoints;
+    const finalBalanceOfDay = currentBalance + positivePoints - negativePoints - totalExpenses;
 
     // Format date string
     const dateString = `${String(dayStart.getDate()).padStart(2, '0')}/${String(dayStart.getMonth() + 1).padStart(2, '0')}/${dayStart.getFullYear()}`;
@@ -99,8 +113,10 @@ export function calculateDailyBalances(
       initialBalance: initialBalanceOfDay,
       positivePoints,
       negativePoints,
+      expenses: totalExpenses,
       finalBalance: finalBalanceOfDay,
       activities: dayActivities,
+      expensesList: dayExpenses,
     });
 
     // Update current balance for next day

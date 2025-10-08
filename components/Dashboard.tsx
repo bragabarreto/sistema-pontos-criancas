@@ -10,21 +10,31 @@ interface DashboardProps {
 
 export function Dashboard({ childId, childData }: DashboardProps) {
   const [activities, setActivities] = useState<any[]>([]);
+  const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
   const [currentWeekday, setCurrentWeekday] = useState('');
   const [dailyBalances, setDailyBalances] = useState<DailyBalance[]>([]);
   const [showChart, setShowChart] = useState(false);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expenseDescription, setExpenseDescription] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseDate, setExpenseDate] = useState('');
 
   useEffect(() => {
     if (childId) {
       loadActivities();
+      loadExpenses();
     }
     updateCurrentDateTime();
     
     // Update time every second for real-time clock
     const interval = setInterval(updateCurrentDateTime, 1000);
+    
+    // Set current date as default for expense
+    const today = new Date().toISOString().split('T')[0];
+    setExpenseDate(today);
     
     return () => clearInterval(interval);
   }, [childId]);
@@ -56,9 +66,10 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       // Validate that the response is an array
       if (Array.isArray(data)) {
         setActivities(data);
-        // Calculate daily balances
+        // Calculate daily balances with both activities and expenses
         const balances = calculateDailyBalances(
           data,
+          expenses,
           childData.initialBalance || 0,
           childData.startDate ? new Date(childData.startDate) : null
         );
@@ -74,6 +85,100 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       setDailyBalances([]);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const loadExpenses = async () => {
+    try {
+      const response = await fetch(`/api/expenses?childId=${childId}`);
+      const data = await response.json();
+      
+      // Validate that the response is an array
+      if (Array.isArray(data)) {
+        setExpenses(data);
+        // Recalculate daily balances with expenses
+        const balances = calculateDailyBalances(
+          activities,
+          data,
+          childData.initialBalance || 0,
+          childData.startDate ? new Date(childData.startDate) : null
+        );
+        setDailyBalances(balances);
+      } else {
+        console.error('Invalid expenses response: expected array, got:', typeof data);
+        setExpenses([]);
+      }
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+      setExpenses([]);
+    }
+  };
+
+  const addExpense = async () => {
+    if (!expenseDescription || !expenseAmount || !expenseDate) {
+      alert('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    const amount = parseInt(expenseAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('O valor deve ser um número positivo.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          childId,
+          description: expenseDescription,
+          amount,
+          date: expenseDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Gasto registrado com sucesso!');
+        setShowExpenseModal(false);
+        setExpenseDescription('');
+        setExpenseAmount('');
+        const today = new Date().toISOString().split('T')[0];
+        setExpenseDate(today);
+        loadExpenses();
+      } else {
+        alert(`Erro: ${data.error || 'Erro ao registrar gasto'}`);
+      }
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Erro ao registrar gasto. Verifique sua conexão e tente novamente.');
+    }
+  };
+
+  const deleteExpense = async (expenseId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este gasto?')) return;
+
+    try {
+      const response = await fetch(`/api/expenses/${expenseId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadExpenses();
+        alert('Gasto excluído com sucesso!');
+      } else {
+        const errorMessage = data.error || 'Erro ao excluir gasto';
+        alert(`Erro: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Erro ao excluir gasto. Verifique sua conexão e tente novamente.');
     }
   };
 
@@ -111,6 +216,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
   const initialBalance = todayBalance?.initialBalance || childData.initialBalance || 0;
   const positivePointsToday = todayBalance?.positivePoints || 0;
   const negativePointsToday = todayBalance?.negativePoints || 0;
+  const expensesToday = todayBalance?.expenses || 0;
   const currentBalance = getCurrentBalance(dailyBalances);
 
   return (
@@ -133,7 +239,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
         </div>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Saldo Inicial do Dia</h3>
           <p className="text-3xl font-bold">{initialBalance}</p>
@@ -147,6 +253,11 @@ export function Dashboard({ childId, childData }: DashboardProps) {
         <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Pontos Negativos Hoje</h3>
           <p className="text-3xl font-bold">-{negativePointsToday}</p>
+        </div>
+        
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-lg shadow-md">
+          <h3 className="text-sm font-semibold mb-2">Gastos do Dia</h3>
+          <p className="text-3xl font-bold">-{expensesToday}</p>
         </div>
         
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
@@ -195,6 +306,115 @@ export function Dashboard({ childId, childData }: DashboardProps) {
         )}
       </div>
 
+      {/* Expenses Section */}
+      <div className="mt-6 bg-gray-50 p-6 rounded-lg">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">💰 Gastos</h3>
+          <button
+            onClick={() => setShowExpenseModal(true)}
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+          >
+            + Adicionar Gasto
+          </button>
+        </div>
+        {loading ? (
+          <p className="text-gray-500">Carregando...</p>
+        ) : expenses.length === 0 ? (
+          <p className="text-gray-500">Nenhum gasto registrado ainda.</p>
+        ) : (
+          <div className="space-y-2">
+            {expenses.slice(0, 10).map((expense) => (
+              <div
+                key={expense.id}
+                className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm"
+              >
+                <div className="flex-1">
+                  <p className="font-semibold">{expense.description}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(expense.date).toLocaleDateString('pt-BR', { timeZone: 'America/Fortaleza' })}
+                  </p>
+                </div>
+                <div className="text-right flex items-center gap-3">
+                  <div>
+                    <p className="font-bold text-orange-600">
+                      -{expense.amount}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => deleteExpense(expense.id)}
+                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 font-semibold"
+                    title="Excluir gasto"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Expense Modal */}
+      {showExpenseModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">Adicionar Gasto</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Descrição</label>
+                <input
+                  type="text"
+                  value={expenseDescription}
+                  onChange={(e) => setExpenseDescription(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder="Ex: Sorvete, Brinquedo, etc."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Valor (pontos)</label>
+                <input
+                  type="number"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder="Ex: 10"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Data</label>
+                <input
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={addExpense}
+                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={() => {
+                  setShowExpenseModal(false);
+                  setExpenseDescription('');
+                  setExpenseAmount('');
+                  const today = new Date().toISOString().split('T')[0];
+                  setExpenseDate(today);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Historical View Section */}
       <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
         <div className="flex justify-between items-center mb-4">
@@ -225,6 +445,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                   <th className="border border-gray-300 px-4 py-2 text-right">Saldo Inicial</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Pontos +</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Pontos -</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Gastos</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Balanço do Dia</th>
                   <th className="border border-gray-300 px-4 py-2 text-right">Saldo Final</th>
                 </tr>
@@ -232,14 +453,14 @@ export function Dashboard({ childId, childData }: DashboardProps) {
               <tbody>
                 {dailyBalances.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="border border-gray-300 px-4 py-2 text-center text-gray-500">
+                    <td colSpan={7} className="border border-gray-300 px-4 py-2 text-center text-gray-500">
                       Nenhum histórico disponível
                     </td>
                   </tr>
                 ) : (
                   dailyBalances.slice().reverse().map((balance, index) => {
                     const isToday = index === 0; // First in reversed array is today
-                    const dailyChange = balance.positivePoints - balance.negativePoints;
+                    const dailyChange = balance.positivePoints - balance.negativePoints - balance.expenses;
                     return (
                       <tr key={balance.dateString} className={isToday ? 'bg-blue-50 font-semibold' : ''}>
                         <td className="border border-gray-300 px-4 py-2">
@@ -252,6 +473,9 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                         </td>
                         <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
                           {balance.negativePoints > 0 ? `-${balance.negativePoints}` : '0'}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right text-orange-600">
+                          {balance.expenses > 0 ? `-${balance.expenses}` : '0'}
                         </td>
                         <td className={`border border-gray-300 px-4 py-2 text-right font-semibold ${
                           dailyChange > 0 ? 'text-green-600' : dailyChange < 0 ? 'text-red-600' : 'text-gray-600'
@@ -290,7 +514,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                       const heightPercent = ((balance.finalBalance - minBalance) / range) * 100;
                       
                       const isToday = index === dailyBalances.length - 1;
-                      const dailyChange = balance.positivePoints - balance.negativePoints;
+                      const dailyChange = balance.positivePoints - balance.negativePoints - balance.expenses;
                       
                       return (
                         <div key={balance.dateString} className="flex-1 flex flex-col items-center">

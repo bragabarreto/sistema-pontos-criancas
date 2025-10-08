@@ -49,6 +49,15 @@ export const settings = pgTable('settings', {
   updatedAt: timestamp('updated_at').defaultNow().notNull(),
 });
 
+export const expenses = pgTable('expenses', {
+  id: serial('id').primaryKey(),
+  childId: integer('child_id').notNull().references(() => children.id, { onDelete: 'cascade' }),
+  description: text('description').notNull(),
+  amount: integer('amount').notNull(),
+  date: timestamp('date').defaultNow().notNull(),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+});
+
 export type Child = typeof children.$inferSelect;
 export type NewChild = typeof children.$inferInsert;
 export type Activity = typeof activities.$inferSelect;
@@ -59,3 +68,5 @@ export type Setting = typeof settings.$inferSelect;
 export type NewSetting = typeof settings.$inferInsert;
 export type ParentUser = typeof parentUser.$inferSelect;
 export type NewParentUser = typeof parentUser.$inferInsert;
+export type Expense = typeof expenses.$inferSelect;
+export type NewExpense = typeof expenses.$inferInsert;
