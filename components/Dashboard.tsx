@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { calculateDailyBalances, getTodayBalance, getCurrentBalance, type DailyBalance } from '@/lib/balance-calculator';
 
 interface DashboardProps {
   childId: number | null;
@@ -13,6 +14,8 @@ export function Dashboard({ childId, childData }: DashboardProps) {
   const [currentDate, setCurrentDate] = useState('');
   const [currentTime, setCurrentTime] = useState('');
   const [currentWeekday, setCurrentWeekday] = useState('');
+  const [dailyBalances, setDailyBalances] = useState<DailyBalance[]>([]);
+  const [showChart, setShowChart] = useState(false);
 
   useEffect(() => {
     if (childId) {
@@ -53,13 +56,22 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       // Validate that the response is an array
       if (Array.isArray(data)) {
         setActivities(data);
+        // Calculate daily balances
+        const balances = calculateDailyBalances(
+          data,
+          childData.initialBalance || 0,
+          childData.startDate ? new Date(childData.startDate) : null
+        );
+        setDailyBalances(balances);
       } else {
         console.error('Invalid activities response: expected array, got:', typeof data);
         setActivities([]);
+        setDailyBalances([]);
       }
     } catch (error) {
       console.error('Error loading activities:', error);
       setActivities([]);
+      setDailyBalances([]);
     } finally {
       setLoading(false);
     }
@@ -94,33 +106,12 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     return <div className="text-center text-gray-500">Selecione uma criança</div>;
   }
 
-  const initialBalance = childData.initialBalance || 0;
-  
-  // Get today's date in Fortaleza timezone for comparison
-  const now = new Date();
-  const fortalezaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-  const todayStart = new Date(fortalezaTime.getFullYear(), fortalezaTime.getMonth(), fortalezaTime.getDate());
-  const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000);
-  
-  // Filter activities for today only
-  const todayActivities = activities.filter(activity => {
-    const activityDate = new Date(activity.date);
-    const activityFortaleza = new Date(activityDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-    return activityFortaleza >= todayStart && activityFortaleza < todayEnd;
-  });
-  
-  // Calculate positive and negative points from today's activities
-  const positivePointsToday = todayActivities
-    .filter(a => a.points > 0)
-    .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
-  
-  // Calculate negative points as absolute value for display and calculation
-  const negativePointsToday = todayActivities
-    .filter(a => a.points < 0)
-    .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
-  
-  // Current balance = initial balance + positive points - negative points
-  const currentBalance = initialBalance + positivePointsToday - negativePointsToday;
+  // Get today's balance data
+  const todayBalance = getTodayBalance(dailyBalances);
+  const initialBalance = todayBalance?.initialBalance || childData.initialBalance || 0;
+  const positivePointsToday = todayBalance?.positivePoints || 0;
+  const negativePointsToday = todayBalance?.negativePoints || 0;
+  const currentBalance = getCurrentBalance(dailyBalances);
 
   return (
     <div>
@@ -200,6 +191,152 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                 </div>
               </div>
             ))}
+          </div>
+        )}
+      </div>
+
+      {/* Historical View Section */}
+      <div className="mt-6 bg-white p-6 rounded-lg shadow-md">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">📊 Histórico Diário de Pontos</h3>
+          <div className="flex gap-2">
+            <button
+              onClick={() => setShowChart(false)}
+              className={`px-4 py-2 rounded-lg font-semibold ${!showChart ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            >
+              📋 Tabela
+            </button>
+            <button
+              onClick={() => setShowChart(true)}
+              className={`px-4 py-2 rounded-lg font-semibold ${showChart ? 'bg-blue-600 text-white' : 'bg-gray-200 text-gray-700'}`}
+            >
+              📈 Gráfico
+            </button>
+          </div>
+        </div>
+
+        {!showChart ? (
+          /* Table View */
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-4 py-2 text-left">Data</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Saldo Inicial</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Pontos +</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Pontos -</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Balanço do Dia</th>
+                  <th className="border border-gray-300 px-4 py-2 text-right">Saldo Final</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dailyBalances.length === 0 ? (
+                  <tr>
+                    <td colSpan={6} className="border border-gray-300 px-4 py-2 text-center text-gray-500">
+                      Nenhum histórico disponível
+                    </td>
+                  </tr>
+                ) : (
+                  dailyBalances.slice().reverse().map((balance, index) => {
+                    const isToday = index === 0; // First in reversed array is today
+                    const dailyChange = balance.positivePoints - balance.negativePoints;
+                    return (
+                      <tr key={balance.dateString} className={isToday ? 'bg-blue-50 font-semibold' : ''}>
+                        <td className="border border-gray-300 px-4 py-2">
+                          {balance.dateString}
+                          {isToday && <span className="ml-2 text-blue-600 text-xs">(Hoje)</span>}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right">{balance.initialBalance}</td>
+                        <td className="border border-gray-300 px-4 py-2 text-right text-green-600">
+                          {balance.positivePoints > 0 ? `+${balance.positivePoints}` : '0'}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right text-red-600">
+                          {balance.negativePoints > 0 ? `-${balance.negativePoints}` : '0'}
+                        </td>
+                        <td className={`border border-gray-300 px-4 py-2 text-right font-semibold ${
+                          dailyChange > 0 ? 'text-green-600' : dailyChange < 0 ? 'text-red-600' : 'text-gray-600'
+                        }`}>
+                          {dailyChange > 0 ? '+' : ''}{dailyChange}
+                        </td>
+                        <td className="border border-gray-300 px-4 py-2 text-right font-bold">{balance.finalBalance}</td>
+                      </tr>
+                    );
+                  })
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          /* Chart View */
+          <div className="bg-gray-50 p-4 rounded-lg">
+            <div className="relative" style={{ height: '400px' }}>
+              {dailyBalances.length === 0 ? (
+                <div className="flex items-center justify-center h-full text-gray-500">
+                  Nenhum dado disponível para exibir
+                </div>
+              ) : (
+                <div className="h-full flex flex-col">
+                  {/* Chart header with scale */}
+                  <div className="mb-2 text-sm text-gray-600">
+                    Evolução do Saldo ao Longo do Tempo
+                  </div>
+                  
+                  {/* Simple ASCII-style chart */}
+                  <div className="flex-1 flex items-end justify-between gap-1 border-b-2 border-l-2 border-gray-400 pb-2 pl-2">
+                    {dailyBalances.map((balance, index) => {
+                      const maxBalance = Math.max(...dailyBalances.map(b => b.finalBalance), childData.initialBalance || 0);
+                      const minBalance = Math.min(...dailyBalances.map(b => b.finalBalance), 0);
+                      const range = maxBalance - minBalance || 1;
+                      const heightPercent = ((balance.finalBalance - minBalance) / range) * 100;
+                      
+                      const isToday = index === dailyBalances.length - 1;
+                      const dailyChange = balance.positivePoints - balance.negativePoints;
+                      
+                      return (
+                        <div key={balance.dateString} className="flex-1 flex flex-col items-center">
+                          <div 
+                            className={`w-full ${
+                              isToday ? 'bg-blue-600' : dailyChange > 0 ? 'bg-green-500' : dailyChange < 0 ? 'bg-red-500' : 'bg-gray-400'
+                            } rounded-t transition-all hover:opacity-80 cursor-pointer relative group`}
+                            style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                            title={`${balance.dateString}: ${balance.finalBalance} pontos`}
+                          >
+                            {/* Tooltip on hover */}
+                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
+                              <div>{balance.dateString}</div>
+                              <div>Saldo: {balance.finalBalance}</div>
+                              <div>Balanço: {dailyChange > 0 ? '+' : ''}{dailyChange}</div>
+                            </div>
+                          </div>
+                          {/* Show date for every 5th bar or if less than 15 days */}
+                          {(dailyBalances.length <= 15 || index % 5 === 0 || isToday) && (
+                            <div className="text-xs text-gray-600 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
+                              {balance.dateString.split('/').slice(0, 2).join('/')}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                  
+                  {/* Legend */}
+                  <div className="mt-4 flex justify-center gap-4 text-xs">
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-green-500 rounded"></div>
+                      <span>Dia Positivo</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-red-500 rounded"></div>
+                      <span>Dia Negativo</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 bg-blue-600 rounded"></div>
+                      <span>Hoje</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         )}
       </div>

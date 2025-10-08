@@ -1,0 +1,137 @@
+/**
+ * Utility functions for calculating daily balance history
+ */
+
+export interface DailyBalance {
+  date: Date;
+  dateString: string;
+  initialBalance: number;
+  positivePoints: number;
+  negativePoints: number;
+  finalBalance: number;
+  activities: any[];
+}
+
+/**
+ * Calculate daily balances from start date to today
+ * @param activities - All activities for the child
+ * @param childInitialBalance - Initial balance set in child settings
+ * @param childStartDate - Start date set in child settings
+ * @returns Array of daily balances
+ */
+export function calculateDailyBalances(
+  activities: any[],
+  childInitialBalance: number,
+  childStartDate: Date | null
+): DailyBalance[] {
+  // If no start date, use the earliest activity date or today
+  const now = new Date();
+  const fortalezaNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
+  
+  let startDate: Date;
+  if (childStartDate) {
+    startDate = new Date(childStartDate);
+  } else if (activities.length > 0) {
+    // Find earliest activity
+    const earliestActivity = activities.reduce((earliest, activity) => {
+      const activityDate = new Date(activity.date);
+      return activityDate < earliest ? activityDate : earliest;
+    }, new Date(activities[0].date));
+    startDate = earliestActivity;
+  } else {
+    // No activities and no start date, use today
+    startDate = fortalezaNow;
+  }
+
+  // Normalize start date to beginning of day in Fortaleza timezone
+  const startDateFortaleza = new Date(startDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
+  const normalizedStartDate = new Date(
+    startDateFortaleza.getFullYear(),
+    startDateFortaleza.getMonth(),
+    startDateFortaleza.getDate(),
+    0, 0, 0, 0
+  );
+
+  // Normalize end date to end of today in Fortaleza timezone
+  const normalizedEndDate = new Date(
+    fortalezaNow.getFullYear(),
+    fortalezaNow.getMonth(),
+    fortalezaNow.getDate(),
+    23, 59, 59, 999
+  );
+
+  const dailyBalances: DailyBalance[] = [];
+  let currentBalance = childInitialBalance;
+
+  // Iterate through each day from start to today
+  const currentDate = new Date(normalizedStartDate);
+  
+  while (currentDate <= normalizedEndDate) {
+    const dayStart = new Date(currentDate);
+    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+
+    // Filter activities for this day
+    const dayActivities = activities.filter(activity => {
+      const activityDate = new Date(activity.date);
+      const activityFortaleza = new Date(activityDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
+      return activityFortaleza >= dayStart && activityFortaleza <= dayEnd;
+    });
+
+    // Calculate positive and negative points for the day
+    const positivePoints = dayActivities
+      .filter(a => a.points > 0)
+      .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
+
+    const negativePoints = dayActivities
+      .filter(a => a.points < 0)
+      .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
+
+    // Calculate final balance for the day
+    const initialBalanceOfDay = currentBalance;
+    const finalBalanceOfDay = currentBalance + positivePoints - negativePoints;
+
+    // Format date string
+    const dateString = `${String(dayStart.getDate()).padStart(2, '0')}/${String(dayStart.getMonth() + 1).padStart(2, '0')}/${dayStart.getFullYear()}`;
+
+    dailyBalances.push({
+      date: new Date(dayStart),
+      dateString,
+      initialBalance: initialBalanceOfDay,
+      positivePoints,
+      negativePoints,
+      finalBalance: finalBalanceOfDay,
+      activities: dayActivities,
+    });
+
+    // Update current balance for next day
+    currentBalance = finalBalanceOfDay;
+
+    // Move to next day
+    currentDate.setDate(currentDate.getDate() + 1);
+  }
+
+  return dailyBalances;
+}
+
+/**
+ * Get the current balance (final balance of today or last day with data)
+ * @param dailyBalances - Array of daily balances
+ * @returns Current balance
+ */
+export function getCurrentBalance(dailyBalances: DailyBalance[]): number {
+  if (dailyBalances.length === 0) return 0;
+  return dailyBalances[dailyBalances.length - 1].finalBalance;
+}
+
+/**
+ * Get today's balance data
+ * @param dailyBalances - Array of daily balances
+ * @returns Today's balance or null if not found
+ */
+export function getTodayBalance(dailyBalances: DailyBalance[]): DailyBalance | null {
+  const now = new Date();
+  const fortalezaNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
+  const todayDateString = `${String(fortalezaNow.getDate()).padStart(2, '0')}/${String(fortalezaNow.getMonth() + 1).padStart(2, '0')}/${fortalezaNow.getFullYear()}`;
+  
+  return dailyBalances.find(balance => balance.dateString === todayDateString) || null;
+}
