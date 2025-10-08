@@ -134,6 +134,17 @@ export default function Home() {
           </button>
         </div>
 
+        {/* Visual indicator showing which child panel is active */}
+        {selectedChildData && (
+          <div className={`mb-4 p-4 rounded-lg border-2 font-semibold text-center ${
+            selectedChildData.name === 'Luiza'
+              ? 'bg-pink-100 border-pink-400 text-pink-800'
+              : 'bg-blue-100 border-blue-400 text-blue-800'
+          }`}>
+            {selectedChildData.name === 'Luiza' ? '👧' : '👦'} Painel de {selectedChildData.name}
+          </div>
+        )}
+
         <div className="bg-white rounded-lg shadow-lg p-6">
           {currentTab === 'dashboard' && <Dashboard childId={currentChild} childData={selectedChildData} />}
           {currentTab === 'activities' && <Activities childId={currentChild} onUpdate={loadChildren} />}
