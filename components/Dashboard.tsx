@@ -22,10 +22,19 @@ export function Dashboard({ childId, childData }: DashboardProps) {
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
 
+  // FIX 1: Reset state when childId changes to prevent data mixing
   useEffect(() => {
-    if (childId) {
-      loadActivities();
-      loadExpenses();
+    // Clear all child-specific data when switching children
+    setActivities([]);
+    setExpenses([]);
+    setDailyBalances([]);
+    setLoading(true);
+  }, [childId]);
+
+  // FIX 2: Load all data simultaneously to avoid race conditions
+  useEffect(() => {
+    if (childId && childData) {
+      loadAllData();
     }
     updateCurrentDateTime();
     
@@ -37,7 +46,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     setExpenseDate(today);
     
     return () => clearInterval(interval);
-  }, [childId]);
+  }, [childId, childData]);
 
   const updateCurrentDateTime = () => {
     // Get current time in Fortaleza timezone
@@ -57,60 +66,46 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     setCurrentTime(`${hours}:${minutes}:${seconds}`);
   };
 
-  const loadActivities = async () => {
+  // FIX 2: Load activities and expenses simultaneously
+  const loadAllData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`/api/activities?childId=${childId}`);
-      const data = await response.json();
       
-      // Validate that the response is an array
-      if (Array.isArray(data)) {
-        setActivities(data);
-        // Calculate daily balances with both activities and expenses
+      // Load both activities and expenses in parallel
+      const [activitiesRes, expensesRes] = await Promise.all([
+        fetch(`/api/activities?childId=${childId}`),
+        fetch(`/api/expenses?childId=${childId}`)
+      ]);
+      
+      const activitiesData = await activitiesRes.json();
+      const expensesData = await expensesRes.json();
+      
+      // Validate responses
+      const validActivities = Array.isArray(activitiesData) ? activitiesData : [];
+      const validExpenses = Array.isArray(expensesData) ? expensesData : [];
+      
+      // Update state
+      setActivities(validActivities);
+      setExpenses(validExpenses);
+      
+      // Calculate daily balances with both datasets
+      if (childData) {
         const balances = calculateDailyBalances(
-          data,
-          expenses,
+          validActivities,
+          validExpenses,
           childData.initialBalance || 0,
-          childData.startDate ? new Date(childData.startDate) : null
+          childData.startDate ? new Date(childData.startDate) : null,
+          childId || undefined
         );
         setDailyBalances(balances);
-      } else {
-        console.error('Invalid activities response: expected array, got:', typeof data);
-        setActivities([]);
-        setDailyBalances([]);
       }
     } catch (error) {
-      console.error('Error loading activities:', error);
+      console.error('Error loading data:', error);
       setActivities([]);
+      setExpenses([]);
       setDailyBalances([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const loadExpenses = async () => {
-    try {
-      const response = await fetch(`/api/expenses?childId=${childId}`);
-      const data = await response.json();
-      
-      // Validate that the response is an array
-      if (Array.isArray(data)) {
-        setExpenses(data);
-        // Recalculate daily balances with expenses
-        const balances = calculateDailyBalances(
-          activities,
-          data,
-          childData.initialBalance || 0,
-          childData.startDate ? new Date(childData.startDate) : null
-        );
-        setDailyBalances(balances);
-      } else {
-        console.error('Invalid expenses response: expected array, got:', typeof data);
-        setExpenses([]);
-      }
-    } catch (error) {
-      console.error('Error loading expenses:', error);
-      setExpenses([]);
     }
   };
 
@@ -149,7 +144,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
         setExpenseAmount('');
         const today = new Date().toISOString().split('T')[0];
         setExpenseDate(today);
-        loadExpenses();
+        loadAllData();
       } else {
         alert(`Erro: ${data.error || 'Erro ao registrar gasto'}`);
       }
@@ -170,7 +165,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       const data = await response.json();
 
       if (response.ok) {
-        loadExpenses();
+        loadAllData();
         alert('Gasto excluído com sucesso!');
       } else {
         const errorMessage = data.error || 'Erro ao excluir gasto';
@@ -193,7 +188,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       const data = await response.json();
 
       if (response.ok) {
-        loadActivities();
+        loadAllData();
         alert('Entrada excluída com sucesso!');
         // Reload to refresh points
         window.location.reload();
