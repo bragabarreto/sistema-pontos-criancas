@@ -791,6 +791,67 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
           </div>
         </div>
       )}
+
+      {/* Expense Modal */}
+      {showExpenseModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-xl font-bold mb-4">Adicionar Gasto</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-semibold mb-1">Descrição</label>
+                <input
+                  type="text"
+                  value={expenseDescription}
+                  onChange={(e) => setExpenseDescription(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder="Ex: Sorvete, Brinquedo, etc."
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Valor (pontos)</label>
+                <input
+                  type="number"
+                  value={expenseAmount}
+                  onChange={(e) => setExpenseAmount(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                  placeholder="Ex: 10"
+                  min="1"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1">Data</label>
+                <input
+                  type="date"
+                  value={expenseDate}
+                  onChange={(e) => setExpenseDate(e.target.value)}
+                  className="w-full border border-gray-300 rounded-md px-3 py-2"
+                />
+              </div>
+            </div>
+            <div className="flex gap-2 mt-6">
+              <button
+                onClick={addExpense}
+                className="flex-1 bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700"
+              >
+                Salvar
+              </button>
+              <button
+                onClick={() => {
+                  setShowExpenseModal(false);
+                  setExpenseDescription('');
+                  setExpenseAmount('');
+                  const today = new Date().toISOString().split('T')[0];
+                  setExpenseDate(today);
+                }}
+                className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400"
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
