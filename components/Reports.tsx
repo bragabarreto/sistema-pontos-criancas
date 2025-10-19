@@ -189,8 +189,8 @@ export function Reports({ childId }: ReportsProps) {
                 </div>
                 <div className="text-right flex items-center gap-3">
                   <div>
-                    <p className={`font-bold ${activity.points > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                      {activity.points > 0 ? '+' : ''}{activity.points * activity.multiplier}
+                    <p className={`font-bold ${activity.category === 'negativos' || activity.category === 'graves' ? 'text-red-600' : 'text-green-600'}`}>
+                      {activity.category === 'negativos' || activity.category === 'graves' ? '-' : '+'}{Math.abs(activity.points * activity.multiplier)}
                     </p>
                     <p className="text-xs text-gray-500">{activity.category}</p>
                   </div>
