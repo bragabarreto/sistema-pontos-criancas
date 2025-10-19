@@ -36,10 +36,12 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
       loadCustomActivities();
       loadMultipliers();
       loadRecentActivities();
+      loadExpenses();
     }
     // Set current date as default
     const today = new Date().toISOString().split('T')[0];
     setSelectedDate(today);
+    setExpenseDate(today);
   }, [childId]);
 
   const loadCustomActivities = async () => {
