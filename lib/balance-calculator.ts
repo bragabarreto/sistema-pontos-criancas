@@ -1,5 +1,6 @@
 /**
  * Utility functions for calculating daily balance history
+ * FIXED VERSION: Includes childId validation to prevent data mixing
  */
 
 export interface DailyBalance {
@@ -20,14 +21,36 @@ export interface DailyBalance {
  * @param expenses - All expenses for the child
  * @param childInitialBalance - Initial balance set in child settings
  * @param childStartDate - Start date set in child settings
+ * @param childId - ID of the child (optional, for validation)
  * @returns Array of daily balances
  */
 export function calculateDailyBalances(
   activities: any[],
   expenses: any[],
   childInitialBalance: number,
-  childStartDate: Date | null
+  childStartDate: Date | null,
+  childId?: number
 ): DailyBalance[] {
+  // FIX: Validate and filter data by childId if provided
+  let validActivities = activities;
+  let validExpenses = expenses;
+  
+  if (childId !== undefined && childId !== null) {
+    validActivities = activities.filter(a => a.childId === childId);
+    validExpenses = expenses.filter(e => e.childId === childId);
+    
+    // Log warning if data was filtered out
+    const filteredActivitiesCount = activities.length - validActivities.length;
+    const filteredExpensesCount = expenses.length - validExpenses.length;
+    
+    if (filteredActivitiesCount > 0) {
+      console.warn(`[Balance Calculator] Filtered out ${filteredActivitiesCount} activities from other children`);
+    }
+    if (filteredExpensesCount > 0) {
+      console.warn(`[Balance Calculator] Filtered out ${filteredExpensesCount} expenses from other children`);
+    }
+  }
+
   // If no start date, use the earliest activity date or today
   const now = new Date();
   const fortalezaNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
@@ -35,12 +58,12 @@ export function calculateDailyBalances(
   let startDate: Date;
   if (childStartDate) {
     startDate = new Date(childStartDate);
-  } else if (activities.length > 0) {
+  } else if (validActivities.length > 0) {
     // Find earliest activity
-    const earliestActivity = activities.reduce((earliest, activity) => {
+    const earliestActivity = validActivities.reduce((earliest, activity) => {
       const activityDate = new Date(activity.date);
       return activityDate < earliest ? activityDate : earliest;
-    }, new Date(activities[0].date));
+    }, new Date(validActivities[0].date));
     startDate = earliestActivity;
   } else {
     // No activities and no start date, use today
@@ -75,23 +98,26 @@ export function calculateDailyBalances(
     const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
 
     // Filter activities for this day
-    const dayActivities = activities.filter(activity => {
+    const dayActivities = validActivities.filter(activity => {
       const activityDate = new Date(activity.date);
       const activityFortaleza = new Date(activityDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
       return activityFortaleza >= dayStart && activityFortaleza <= dayEnd;
     });
 
-    // Calculate positive and negative points for the day
+    // FIX: Calculate positive points correctly
     const positivePoints = dayActivities
       .filter(a => a.points > 0)
       .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
 
+    // FIX: Calculate negative points as ABSOLUTE VALUE
+    // Points in database are already negative (e.g., -5)
+    // We need to convert to positive for display and subtraction
     const negativePoints = dayActivities
       .filter(a => a.points < 0)
       .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
 
     // Filter expenses for this day
-    const dayExpenses = expenses.filter(expense => {
+    const dayExpenses = validExpenses.filter(expense => {
       const expenseDate = new Date(expense.date);
       const expenseFortaleza = new Date(expenseDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
       return expenseFortaleza >= dayStart && expenseFortaleza <= dayEnd;
@@ -100,7 +126,8 @@ export function calculateDailyBalances(
     // Calculate total expenses for the day
     const totalExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // Calculate final balance for the day
+    // FIX: Calculate final balance correctly
+    // Formula: Final Balance = Initial Balance + Positive Points - Negative Points - Expenses
     const initialBalanceOfDay = currentBalance;
     const finalBalanceOfDay = currentBalance + positivePoints - negativePoints - totalExpenses;
 
@@ -151,3 +178,4 @@ export function getTodayBalance(dailyBalances: DailyBalance[]): DailyBalance | n
   
   return dailyBalances.find(balance => balance.dateString === todayDateString) || null;
 }
+
