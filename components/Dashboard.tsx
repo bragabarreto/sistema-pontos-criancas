@@ -206,11 +206,15 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     return <div className="text-center text-gray-500">Selecione uma criança</div>;
   }
 
-  // Get today's balance data
+  // Get today's balance data from the daily balances array
+  // todayBalance contains pre-calculated values:
+  // - positivePoints: Sum of all positive activities (already positive number)
+  // - negativePoints: Sum of all negative activities (converted to positive/absolute value)
+  // - expenses: Sum of all expenses for the day
   const todayBalance = getTodayBalance(dailyBalances);
   const initialBalance = todayBalance?.initialBalance || childData.initialBalance || 0;
-  const positivePointsToday = todayBalance?.positivePoints || 0;
-  const negativePointsToday = todayBalance?.negativePoints || 0;
+  const positivePointsToday = todayBalance?.positivePoints || 0; // Always >= 0
+  const negativePointsToday = todayBalance?.negativePoints || 0; // Always >= 0 (absolute value)
   const expensesToday = todayBalance?.expenses || 0;
   const currentBalance = getCurrentBalance(dailyBalances);
 
@@ -235,26 +239,36 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+        {/* Rectangle 1: Initial Balance - Blue */}
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Saldo Inicial do Dia</h3>
           <p className="text-3xl font-bold">{initialBalance}</p>
         </div>
         
+        {/* Rectangle 2: Positive Points - Green */}
+        {/* positivePointsToday is always >= 0 (sum of positive activities only) */}
         <div className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Pontos Positivos Hoje</h3>
           <p className="text-3xl font-bold">+{positivePointsToday}</p>
         </div>
         
+        {/* Rectangle 3: Negative Points - Red */}
+        {/* negativePointsToday is always >= 0 (absolute value of negative activities) */}
+        {/* Display with minus sign: e.g., if value is 5, shows "-5" */}
         <div className="bg-gradient-to-br from-red-500 to-red-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Pontos Negativos Hoje</h3>
           <p className="text-3xl font-bold">-{negativePointsToday}</p>
         </div>
         
+        {/* Rectangle 4: Expenses - Orange */}
+        {/* expensesToday is always >= 0 (sum of expense amounts) */}
         <div className="bg-gradient-to-br from-orange-500 to-orange-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Gastos do Dia</h3>
           <p className="text-3xl font-bold">-{expensesToday}</p>
         </div>
         
+        {/* Rectangle 5: Current Balance - Purple */}
+        {/* Formula: currentBalance = initialBalance + positivePoints - negativePoints - expenses */}
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-lg shadow-md">
           <h3 className="text-sm font-semibold mb-2">Saldo Atual</h3>
           <p className="text-3xl font-bold">{currentBalance}</p>

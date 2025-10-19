@@ -104,14 +104,17 @@ export function calculateDailyBalances(
       return activityFortaleza >= dayStart && activityFortaleza <= dayEnd;
     });
 
-    // FIX: Calculate positive points correctly
+    // Calculate positive points: sum of all activities with points > 0
+    // Example: activities with points 10, 5, 8 → positivePoints = 23
     const positivePoints = dayActivities
       .filter(a => a.points > 0)
       .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
 
-    // FIX: Calculate negative points as ABSOLUTE VALUE
-    // Points in database are already negative (e.g., -5)
-    // We need to convert to positive for display and subtraction
+    // Calculate negative points as ABSOLUTE VALUE
+    // Points in database are stored as negative (e.g., -5, -10)
+    // We convert to positive for display and calculation: |-5| = 5
+    // This ensures negativePoints is always a positive number (e.g., 5, not -5)
+    // Example: activities with points -5, -3 → negativePoints = 8 (not -8)
     const negativePoints = dayActivities
       .filter(a => a.points < 0)
       .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
@@ -126,8 +129,10 @@ export function calculateDailyBalances(
     // Calculate total expenses for the day
     const totalExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-    // FIX: Calculate final balance correctly
+    // Calculate final balance using the correct formula
     // Formula: Final Balance = Initial Balance + Positive Points - Negative Points - Expenses
+    // Example: 100 + 20 - 5 - 10 = 105
+    // Note: negativePoints is already absolute, so we subtract it
     const initialBalanceOfDay = currentBalance;
     const finalBalanceOfDay = currentBalance + positivePoints - negativePoints - totalExpenses;
 
