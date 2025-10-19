@@ -23,6 +23,13 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
   const [newActivityCategory, setNewActivityCategory] = useState('');
   const [newActivityName, setNewActivityName] = useState('');
   const [newActivityPoints, setNewActivityPoints] = useState(0);
+  
+  // Expense management state
+  const [expenses, setExpenses] = useState<any[]>([]);
+  const [showExpenseModal, setShowExpenseModal] = useState(false);
+  const [expenseDescription, setExpenseDescription] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseDate, setExpenseDate] = useState('');
 
   useEffect(() => {
     if (childId) {
