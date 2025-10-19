@@ -47,3 +47,7 @@ index_backup.html
 sistema-*.html
 temp_js.js
 exemplo-gist.md
+-e 
+# Environment files
+*.env
+*.env.*
