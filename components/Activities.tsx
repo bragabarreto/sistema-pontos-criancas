@@ -97,6 +97,93 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     }
   };
 
+  const loadExpenses = async () => {
+    try {
+      const response = await fetch(`/api/expenses?childId=${childId}`);
+      const data = await response.json();
+      
+      if (Array.isArray(data)) {
+        setExpenses(data);
+      } else {
+        console.error('Invalid expenses response: expected array, got:', typeof data);
+        setExpenses([]);
+      }
+    } catch (error) {
+      console.error('Error loading expenses:', error);
+      setExpenses([]);
+    }
+  };
+
+  const addExpense = async () => {
+    if (!expenseDescription || !expenseAmount || !expenseDate) {
+      alert('Por favor, preencha todos os campos.');
+      return;
+    }
+
+    const amount = parseInt(expenseAmount);
+    if (isNaN(amount) || amount <= 0) {
+      alert('O valor deve ser um número positivo.');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/expenses', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          childId,
+          description: expenseDescription,
+          amount,
+          date: expenseDate,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        alert('Gasto registrado com sucesso!');
+        setShowExpenseModal(false);
+        setExpenseDescription('');
+        setExpenseAmount('');
+        const today = new Date().toISOString().split('T')[0];
+        setExpenseDate(today);
+        loadExpenses();
+        onUpdate(); // Trigger Dashboard refresh
+      } else {
+        alert(`Erro: ${data.error || 'Erro ao registrar gasto'}`);
+      }
+    } catch (error) {
+      console.error('Error adding expense:', error);
+      alert('Erro ao registrar gasto. Verifique sua conexão e tente novamente.');
+    }
+  };
+
+  const deleteExpense = async (expenseId: number) => {
+    if (!confirm('Tem certeza que deseja excluir este gasto?')) return;
+
+    try {
+      const response = await fetch(`/api/expenses/${expenseId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        loadExpenses();
+        onUpdate(); // Trigger Dashboard refresh
+        alert('Gasto excluído com sucesso!');
+      } else {
+        const errorMessage = data.error || 'Erro ao excluir gasto';
+        alert(`Erro: ${errorMessage}`);
+      }
+    } catch (error) {
+      console.error('Error deleting expense:', error);
+      alert('Erro ao excluir gasto. Verifique sua conexão e tente novamente.');
+    }
+  };
+
   const deleteActivity = async (activityId: number) => {
     if (!confirm('Tem certeza que deseja remover este registro de atividade?')) return;
 
