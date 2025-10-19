@@ -104,19 +104,19 @@ export function calculateDailyBalances(
       return activityFortaleza >= dayStart && activityFortaleza <= dayEnd;
     });
 
-    // Calculate positive points: sum of all activities with points > 0
+    // Calculate positive points: sum of all activities with category 'positivos' or 'especiais'
     // Example: activities with points 10, 5, 8 → positivePoints = 23
     const positivePoints = dayActivities
-      .filter(a => a.points > 0)
+      .filter(a => a.category === 'positivos' || a.category === 'especiais')
       .reduce((sum, a) => sum + (a.points * a.multiplier), 0);
 
     // Calculate negative points as ABSOLUTE VALUE
-    // Points in database are stored as negative (e.g., -5, -10)
-    // We convert to positive for display and calculation: |-5| = 5
-    // This ensures negativePoints is always a positive number (e.g., 5, not -5)
-    // Example: activities with points -5, -3 → negativePoints = 8 (not -8)
+    // Filter by category 'negativos' or 'graves' instead of point sign
+    // We convert to positive for display and calculation using Math.abs()
+    // This ensures negativePoints is always a positive number (e.g., 100, not -100)
+    // Example: activities with category 'graves' with 1 point × 100 multiplier → negativePoints = 100
     const negativePoints = dayActivities
-      .filter(a => a.points < 0)
+      .filter(a => a.category === 'negativos' || a.category === 'graves')
       .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
 
     // Filter expenses for this day
