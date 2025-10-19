@@ -588,6 +588,57 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
         ))}
       </div>
 
+      {/* Expenses Section */}
+      <div className="mt-8 bg-orange-50 border-2 border-orange-300 rounded-lg p-4">
+        <div className="flex justify-between items-center mb-4">
+          <h3 className="text-xl font-bold">💰 Gastos</h3>
+          <button
+            onClick={() => setShowExpenseModal(true)}
+            className="bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
+          >
+            + Adicionar Gasto
+          </button>
+        </div>
+        <p className="text-sm text-gray-600 mb-3">
+          Registre os gastos de pontos da criança (ex: prêmios, recompensas).
+        </p>
+        {loading ? (
+          <p className="text-gray-500">Carregando...</p>
+        ) : expenses.length === 0 ? (
+          <p className="text-gray-500">Nenhum gasto registrado ainda.</p>
+        ) : (
+          <div className="space-y-2">
+            {expenses.slice(0, 10).map((expense) => (
+              <div
+                key={expense.id}
+                className="flex justify-between items-center bg-white p-3 rounded-md shadow-sm"
+              >
+                <div className="flex-1">
+                  <p className="font-semibold">{expense.description}</p>
+                  <p className="text-sm text-gray-500">
+                    {new Date(expense.date).toLocaleDateString('pt-BR', { timeZone: 'America/Fortaleza' })}
+                  </p>
+                </div>
+                <div className="text-right flex items-center gap-3">
+                  <div>
+                    <p className="font-bold text-orange-600">
+                      -{expense.amount}
+                    </p>
+                  </div>
+                  <button
+                    onClick={() => deleteExpense(expense.id)}
+                    className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 font-semibold"
+                    title="Excluir gasto"
+                  >
+                    🗑️
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
       {/* Recent Activities Section */}
       <div className="mt-8 bg-gray-50 border border-gray-300 rounded-lg p-4">
         <h3 className="text-xl font-bold mb-4">📋 Registros Recentes (Últimos 20)</h3>
