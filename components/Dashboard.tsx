@@ -212,10 +212,10 @@ export function Dashboard({ childId, childData }: DashboardProps) {
   // - negativePoints: Sum of all negative activities (converted to positive/absolute value)
   // - expenses: Sum of all expenses for the day
   const todayBalance = getTodayBalance(dailyBalances);
-  const initialBalance = todayBalance?.initialBalance || childData.initialBalance || 0;
-  const positivePointsToday = todayBalance?.positivePoints || 0; // Always >= 0
-  const negativePointsToday = todayBalance?.negativePoints || 0; // Always >= 0 (absolute value)
-  const expensesToday = todayBalance?.expenses || 0;
+  const initialBalance = todayBalance?.initialBalance ?? childData.initialBalance ?? 0;
+  const positivePointsToday = todayBalance?.positivePoints ?? 0; // Always >= 0
+  const negativePointsToday = todayBalance?.negativePoints ?? 0; // Always >= 0 (absolute value)
+  const expensesToday = todayBalance?.expenses ?? 0;
   const currentBalance = getCurrentBalance(dailyBalances);
 
   return (
