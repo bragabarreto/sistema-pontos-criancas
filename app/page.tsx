@@ -6,6 +6,7 @@ import { Dashboard } from '@/components/Dashboard';
 import { Activities } from '@/components/Activities';
 import { Reports } from '@/components/Reports';
 import { Settings } from '@/components/Settings';
+import { fetchJsonWithRetry } from '@/lib/fetch-retry';
 
 export default function Home() {
   const [currentChild, setCurrentChild] = useState<number | null>(null);
@@ -20,9 +21,10 @@ export default function Home() {
 
   const loadChildren = async () => {
     try {
-      const response = await fetch('/api/children');
-      const data = await response.json();
-      
+      // Retry with backoff: the first request after idle can fail while the
+      // database wakes up (Neon free tier cold start)
+      const data = await fetchJsonWithRetry('/api/children');
+
       // Validate that the response is an array before using it
       if (Array.isArray(data)) {
         setChildren(data);

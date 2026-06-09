@@ -260,6 +260,24 @@ Para mais detalhes, veja:
 - Os dados agora são persistidos em banco de dados, não mais no localStorage
 - É possível acessar e modificar dados de qualquer dispositivo
 
+## 🩺 Monitoramento e Estabilidade
+
+O sistema expõe um endpoint de health check que verifica a conexão com o banco:
+
+```
+GET /api/health
+→ { "status": "ok", "database": "up", "latencyMs": 42, ... }
+```
+
+**Recomendado:** configure um monitor gratuito (ex: [UptimeRobot](https://uptimerobot.com))
+para chamar `https://seu-projeto.vercel.app/api/health` a cada 5 minutos. Além de
+alertar quando o sistema cair, isso **mantém o banco Neon acordado** — no plano
+gratuito o Neon hiberna após alguns minutos de inatividade, e o "cold start"
+é a principal causa de lentidão/erros no primeiro acesso.
+
+O frontend também faz retry automático com backoff nas leituras, para absorver
+cold starts sem mostrar erro ao usuário.
+
 ## 🐛 Troubleshooting
 
 ### Erro de conexão com o banco:

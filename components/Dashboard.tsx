@@ -2,19 +2,55 @@
 
 import { useEffect, useState } from 'react';
 import { calculateDailyBalances, getTodayBalance, getCurrentBalance, type DailyBalance } from '@/lib/balance-calculator';
+import { formatDateBR, formatTimeBR, getWeekdayBR } from '@/lib/timezone';
+import { fetchJsonWithRetry } from '@/lib/fetch-retry';
 
 interface DashboardProps {
   childId: number | null;
   childData: any;
 }
 
+// Limit chart bars: rendering hundreds of DOM bars (one per day of history)
+// exhausts memory on mobile browsers
+const CHART_MAX_DAYS = 90;
+
+// Isolated clock component: the 1-second tick only re-renders this small
+// block. Previously it re-rendered the entire Dashboard (history table and
+// chart with hundreds of rows) every second, which froze and crashed
+// mobile Safari as data accumulated.
+function FortalezaDateTime() {
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const weekday = getWeekdayBR(now);
+  const weekdayCapitalized = weekday.charAt(0).toUpperCase() + weekday.slice(1);
+
+  return (
+    <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
+      <div>
+        <p className="text-lg">
+          <span className="font-semibold">{weekdayCapitalized}</span> - {formatDateBR(now)}
+        </p>
+        <p className="text-sm opacity-90">
+          ℹ️ As atribuições imediatas são referentes ao dia em curso.
+        </p>
+      </div>
+      <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
+        <p className="text-xs opacity-90 mb-1">🕐 Horário de Fortaleza - CE</p>
+        <p className="text-3xl font-bold font-mono tracking-wider">{formatTimeBR(now)}</p>
+      </div>
+    </div>
+  );
+}
+
 export function Dashboard({ childId, childData }: DashboardProps) {
   const [activities, setActivities] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const [currentDate, setCurrentDate] = useState('');
-  const [currentTime, setCurrentTime] = useState('');
-  const [currentWeekday, setCurrentWeekday] = useState('');
   const [dailyBalances, setDailyBalances] = useState<DailyBalance[]>([]);
   const [showChart, setShowChart] = useState(false);
   const [showExpenseModal, setShowExpenseModal] = useState(false);
@@ -36,50 +72,23 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     if (childId && childData) {
       loadAllData();
     }
-    updateCurrentDateTime();
-    
-    // Update time every second for real-time clock
-    const interval = setInterval(updateCurrentDateTime, 1000);
-    
+
     // Set current date as default for expense
     const today = new Date().toISOString().split('T')[0];
     setExpenseDate(today);
-    
-    return () => clearInterval(interval);
   }, [childId, childData]);
-
-  const updateCurrentDateTime = () => {
-    // Get current time in Fortaleza timezone
-    const now = new Date();
-    const fortalezaTime = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-    
-    const weekdays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
-    const day = String(fortalezaTime.getDate()).padStart(2, '0');
-    const month = String(fortalezaTime.getMonth() + 1).padStart(2, '0');
-    const year = fortalezaTime.getFullYear();
-    const hours = String(fortalezaTime.getHours()).padStart(2, '0');
-    const minutes = String(fortalezaTime.getMinutes()).padStart(2, '0');
-    const seconds = String(fortalezaTime.getSeconds()).padStart(2, '0');
-    
-    setCurrentWeekday(weekdays[fortalezaTime.getDay()]);
-    setCurrentDate(`${day}/${month}/${year}`);
-    setCurrentTime(`${hours}:${minutes}:${seconds}`);
-  };
 
   // FIX 2: Load activities and expenses simultaneously
   const loadAllData = async () => {
     try {
       setLoading(true);
-      
-      // Load both activities and expenses in parallel
-      const [activitiesRes, expensesRes] = await Promise.all([
-        fetch(`/api/activities?childId=${childId}`),
-        fetch(`/api/expenses?childId=${childId}`)
+
+      // Load both in parallel, with retry/backoff to absorb DB cold starts
+      const [activitiesData, expensesData] = await Promise.all([
+        fetchJsonWithRetry(`/api/activities?childId=${childId}`),
+        fetchJsonWithRetry(`/api/expenses?childId=${childId}`)
       ]);
-      
-      const activitiesData = await activitiesRes.json();
-      const expensesData = await expensesRes.json();
-      
+
       // Validate responses
       const validActivities = Array.isArray(activitiesData) ? activitiesData : [];
       const validExpenses = Array.isArray(expensesData) ? expensesData : [];
@@ -222,20 +231,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
     <div>
       <div className="mb-6 bg-gradient-to-r from-blue-500 to-purple-600 text-white p-4 rounded-lg shadow-md">
         <h2 className="text-2xl font-bold mb-2">📊 Dashboard - {childData.name}</h2>
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-          <div>
-            <p className="text-lg">
-              <span className="font-semibold">{currentWeekday}</span> - {currentDate}
-            </p>
-            <p className="text-sm opacity-90">
-              ℹ️ As atribuições imediatas são referentes ao dia em curso.
-            </p>
-          </div>
-          <div className="bg-white bg-opacity-20 rounded-lg px-4 py-2 backdrop-blur-sm">
-            <p className="text-xs opacity-90 mb-1">🕐 Horário de Fortaleza - CE</p>
-            <p className="text-3xl font-bold font-mono tracking-wider">{currentTime}</p>
-          </div>
-        </div>
+        <FortalezaDateTime />
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
@@ -512,44 +508,49 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                   {/* Chart header with scale */}
                   <div className="mb-2 text-sm text-gray-600">
                     Evolução do Saldo ao Longo do Tempo
+                    {dailyBalances.length > CHART_MAX_DAYS && ` (últimos ${CHART_MAX_DAYS} dias)`}
                   </div>
-                  
+
                   {/* Simple ASCII-style chart */}
                   <div className="flex-1 flex items-end justify-between gap-1 border-b-2 border-l-2 border-gray-400 pb-2 pl-2">
-                    {dailyBalances.map((balance, index) => {
-                      const maxBalance = Math.max(...dailyBalances.map(b => b.finalBalance), childData.initialBalance || 0);
-                      const minBalance = Math.min(...dailyBalances.map(b => b.finalBalance), 0);
+                    {(() => {
+                      const chartData = dailyBalances.slice(-CHART_MAX_DAYS);
+                      const maxBalance = Math.max(...chartData.map(b => b.finalBalance), childData.initialBalance || 0);
+                      const minBalance = Math.min(...chartData.map(b => b.finalBalance), 0);
                       const range = maxBalance - minBalance || 1;
-                      const heightPercent = ((balance.finalBalance - minBalance) / range) * 100;
-                      
-                      const isToday = index === dailyBalances.length - 1;
-                      const dailyChange = balance.positivePoints - balance.negativePoints - balance.expenses;
-                      
-                      return (
-                        <div key={balance.dateString} className="flex-1 flex flex-col items-center">
-                          <div 
-                            className={`w-full ${
-                              isToday ? 'bg-blue-600' : dailyChange > 0 ? 'bg-green-500' : dailyChange < 0 ? 'bg-red-500' : 'bg-gray-400'
-                            } rounded-t transition-all hover:opacity-80 cursor-pointer relative group`}
-                            style={{ height: `${Math.max(heightPercent, 5)}%` }}
-                            title={`${balance.dateString}: ${balance.finalBalance} pontos`}
-                          >
-                            {/* Tooltip on hover */}
-                            <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
-                              <div>{balance.dateString}</div>
-                              <div>Saldo: {balance.finalBalance}</div>
-                              <div>Balanço: {dailyChange > 0 ? '+' : ''}{dailyChange}</div>
+
+                      return chartData.map((balance, index) => {
+                        const heightPercent = ((balance.finalBalance - minBalance) / range) * 100;
+
+                        const isToday = index === chartData.length - 1;
+                        const dailyChange = balance.positivePoints - balance.negativePoints - balance.expenses;
+
+                        return (
+                          <div key={balance.dateString} className="flex-1 flex flex-col items-center">
+                            <div
+                              className={`w-full ${
+                                isToday ? 'bg-blue-600' : dailyChange > 0 ? 'bg-green-500' : dailyChange < 0 ? 'bg-red-500' : 'bg-gray-400'
+                              } rounded-t transition-all hover:opacity-80 cursor-pointer relative group`}
+                              style={{ height: `${Math.max(heightPercent, 5)}%` }}
+                              title={`${balance.dateString}: ${balance.finalBalance} pontos`}
+                            >
+                              {/* Tooltip on hover */}
+                              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block bg-gray-800 text-white text-xs rounded px-2 py-1 whitespace-nowrap z-10">
+                                <div>{balance.dateString}</div>
+                                <div>Saldo: {balance.finalBalance}</div>
+                                <div>Balanço: {dailyChange > 0 ? '+' : ''}{dailyChange}</div>
+                              </div>
                             </div>
+                            {/* Show date for every 5th bar or if less than 15 days */}
+                            {(chartData.length <= 15 || index % 5 === 0 || isToday) && (
+                              <div className="text-xs text-gray-600 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
+                                {balance.dateString.split('/').slice(0, 2).join('/')}
+                              </div>
+                            )}
                           </div>
-                          {/* Show date for every 5th bar or if less than 15 days */}
-                          {(dailyBalances.length <= 15 || index % 5 === 0 || isToday) && (
-                            <div className="text-xs text-gray-600 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
-                              {balance.dateString.split('/').slice(0, 2).join('/')}
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
+                        );
+                      });
+                    })()}
                   </div>
                   
                   {/* Legend */}

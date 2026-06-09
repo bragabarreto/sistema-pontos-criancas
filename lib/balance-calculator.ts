@@ -1,7 +1,14 @@
 /**
  * Utility functions for calculating daily balance history
  * FIXED VERSION: Includes childId validation to prevent data mixing
+ *
+ * PERFORMANCE: activities/expenses are grouped by day in a single pass
+ * (O(n + days)) instead of re-filtering the whole list for every day
+ * (O(days × n)). The old approach also created Intl formatters per item,
+ * which froze mobile browsers once a few months of data accumulated.
  */
+
+import { getFortalezaDayKey } from './timezone';
 
 export interface DailyBalance {
   date: Date;
@@ -13,6 +20,30 @@ export interface DailyBalance {
   finalBalance: number;
   activities: any[];
   expensesList: any[];
+}
+
+// Safety cap: prevents a corrupted/ancient start date (e.g. year 1970)
+// from generating tens of thousands of rows and crashing the browser
+const MAX_HISTORY_DAYS = 3700; // ~10 years
+
+/**
+ * Group items by their calendar day (Fortaleza timezone).
+ * Items with invalid dates are skipped instead of breaking the calculation.
+ */
+function groupByDay(items: any[]): Map<string, any[]> {
+  const byDay = new Map<string, any[]>();
+  for (const item of items) {
+    const date = new Date(item.date);
+    if (isNaN(date.getTime())) continue;
+    const key = getFortalezaDayKey(date);
+    const list = byDay.get(key);
+    if (list) {
+      list.push(item);
+    } else {
+      byDay.set(key, [item]);
+    }
+  }
+  return byDay;
 }
 
 /**
@@ -34,15 +65,15 @@ export function calculateDailyBalances(
   // FIX: Validate and filter data by childId if provided
   let validActivities = activities;
   let validExpenses = expenses;
-  
+
   if (childId !== undefined && childId !== null) {
     validActivities = activities.filter(a => a.childId === childId);
     validExpenses = expenses.filter(e => e.childId === childId);
-    
+
     // Log warning if data was filtered out
     const filteredActivitiesCount = activities.length - validActivities.length;
     const filteredExpensesCount = expenses.length - validExpenses.length;
-    
+
     if (filteredActivitiesCount > 0) {
       console.warn(`[Balance Calculator] Filtered out ${filteredActivitiesCount} activities from other children`);
     }
@@ -51,58 +82,45 @@ export function calculateDailyBalances(
     }
   }
 
-  // If no start date, use the earliest activity date or today
-  const now = new Date();
-  const fortalezaNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-  
-  let startDate: Date;
+  const activitiesByDay = groupByDay(validActivities);
+  const expensesByDay = groupByDay(validExpenses);
+
+  const todayKey = getFortalezaDayKey(new Date());
+
+  // Determine the first day of the history:
+  // child start date if valid, otherwise the earliest activity, otherwise today.
+  // Day keys are YYYY-MM-DD strings, so lexicographic comparison is chronological.
+  let startKey: string | null = null;
   if (childStartDate) {
-    startDate = new Date(childStartDate);
-  } else if (validActivities.length > 0) {
-    // Find earliest activity
-    const earliestActivity = validActivities.reduce((earliest, activity) => {
-      const activityDate = new Date(activity.date);
-      return activityDate < earliest ? activityDate : earliest;
-    }, new Date(validActivities[0].date));
-    startDate = earliestActivity;
-  } else {
-    // No activities and no start date, use today
-    startDate = fortalezaNow;
+    const start = new Date(childStartDate);
+    if (!isNaN(start.getTime())) {
+      startKey = getFortalezaDayKey(start);
+    }
+  }
+  if (!startKey) {
+    for (const key of activitiesByDay.keys()) {
+      if (!startKey || key < startKey) startKey = key;
+    }
+  }
+  if (!startKey || startKey > todayKey) {
+    startKey = todayKey;
   }
 
-  // Normalize start date to beginning of day in Fortaleza timezone
-  const startDateFortaleza = new Date(startDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-  const normalizedStartDate = new Date(
-    startDateFortaleza.getFullYear(),
-    startDateFortaleza.getMonth(),
-    startDateFortaleza.getDate(),
-    0, 0, 0, 0
-  );
+  const [startYear, startMonth, startDay] = startKey.split('-').map(Number);
 
-  // Normalize end date to end of today in Fortaleza timezone
-  const normalizedEndDate = new Date(
-    fortalezaNow.getFullYear(),
-    fortalezaNow.getMonth(),
-    fortalezaNow.getDate(),
-    23, 59, 59, 999
-  );
+  // Iterate days using a UTC-noon cursor: immune to DST/timezone edge cases,
+  // and toISOString().slice(0, 10) yields the YYYY-MM-DD key directly
+  const cursor = new Date(Date.UTC(startYear, startMonth - 1, startDay, 12));
 
   const dailyBalances: DailyBalance[] = [];
   let currentBalance = childInitialBalance;
 
-  // Iterate through each day from start to today
-  const currentDate = new Date(normalizedStartDate);
-  
-  while (currentDate <= normalizedEndDate) {
-    const dayStart = new Date(currentDate);
-    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000 - 1);
+  for (let i = 0; i < MAX_HISTORY_DAYS; i++) {
+    const dayKey = cursor.toISOString().slice(0, 10);
+    if (dayKey > todayKey) break;
 
-    // Filter activities for this day
-    const dayActivities = validActivities.filter(activity => {
-      const activityDate = new Date(activity.date);
-      const activityFortaleza = new Date(activityDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-      return activityFortaleza >= dayStart && activityFortaleza <= dayEnd;
-    });
+    const dayActivities = activitiesByDay.get(dayKey) || [];
+    const dayExpenses = expensesByDay.get(dayKey) || [];
 
     // Calculate positive points: sum of all activities with category 'positivos' or 'especiais'
     // Example: activities with points 10, 5, 8 → positivePoints = 23
@@ -119,13 +137,6 @@ export function calculateDailyBalances(
       .filter(a => a.category === 'negativos' || a.category === 'graves')
       .reduce((sum, a) => sum + Math.abs(a.points * a.multiplier), 0);
 
-    // Filter expenses for this day
-    const dayExpenses = validExpenses.filter(expense => {
-      const expenseDate = new Date(expense.date);
-      const expenseFortaleza = new Date(expenseDate.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-      return expenseFortaleza >= dayStart && expenseFortaleza <= dayEnd;
-    });
-
     // Calculate total expenses for the day
     const totalExpenses = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
@@ -136,11 +147,11 @@ export function calculateDailyBalances(
     const initialBalanceOfDay = currentBalance;
     const finalBalanceOfDay = currentBalance + positivePoints - negativePoints - totalExpenses;
 
-    // Format date string
-    const dateString = `${String(dayStart.getDate()).padStart(2, '0')}/${String(dayStart.getMonth() + 1).padStart(2, '0')}/${dayStart.getFullYear()}`;
+    const [year, month, day] = dayKey.split('-');
+    const dateString = `${day}/${month}/${year}`;
 
     dailyBalances.push({
-      date: new Date(dayStart),
+      date: new Date(Number(year), Number(month) - 1, Number(day)),
       dateString,
       initialBalance: initialBalanceOfDay,
       positivePoints,
@@ -155,7 +166,7 @@ export function calculateDailyBalances(
     currentBalance = finalBalanceOfDay;
 
     // Move to next day
-    currentDate.setDate(currentDate.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
   return dailyBalances;
@@ -177,10 +188,9 @@ export function getCurrentBalance(dailyBalances: DailyBalance[]): number {
  * @returns Today's balance or null if not found
  */
 export function getTodayBalance(dailyBalances: DailyBalance[]): DailyBalance | null {
-  const now = new Date();
-  const fortalezaNow = new Date(now.toLocaleString('en-US', { timeZone: 'America/Fortaleza' }));
-  const todayDateString = `${String(fortalezaNow.getDate()).padStart(2, '0')}/${String(fortalezaNow.getMonth() + 1).padStart(2, '0')}/${fortalezaNow.getFullYear()}`;
-  
+  const todayKey = getFortalezaDayKey(new Date());
+  const [year, month, day] = todayKey.split('-');
+  const todayDateString = `${day}/${month}/${year}`;
+
   return dailyBalances.find(balance => balance.dateString === todayDateString) || null;
 }
-
