@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { activities, children } from '@/lib/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, desc, sql } from 'drizzle-orm';
 import { getFortalezaNow, dateStringToFortalezaTimestamp } from '@/lib/timezone';
 
 export async function GET(request: Request) {
@@ -65,20 +65,16 @@ export async function POST(request: Request) {
       multiplier: parsedMultiplier,
     }).returning();
 
-    // Update child's total points using Drizzle ORM (safe from SQL injection)
+    // Update child's total points atomically in a single statement:
+    // a read-then-write would lose points if two requests arrived at once
     const pointsChange = parsedPoints * parsedMultiplier;
-    
-    // First, get the current child to update total points
-    const [currentChild] = await db.select().from(children).where(eq(children.id, parsedChildId));
-    
-    if (currentChild) {
-      await db.update(children)
-        .set({
-          totalPoints: currentChild.totalPoints + pointsChange,
-          updatedAt: new Date(),
-        })
-        .where(eq(children.id, parsedChildId));
-    }
+
+    await db.update(children)
+      .set({
+        totalPoints: sql`${children.totalPoints} + ${pointsChange}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(children.id, parsedChildId));
 
     return NextResponse.json(newActivity[0], { status: 201 });
   } catch (error) {

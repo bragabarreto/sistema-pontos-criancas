@@ -33,6 +33,27 @@ export function dateStringToFortalezaTimestamp(dateString: string): Date {
   return date;
 }
 
+// Cached formatter: creating Intl.DateTimeFormat is expensive, so reuse a
+// single instance for day-key calculations (called once per activity/expense)
+let dayKeyFormatter: Intl.DateTimeFormat | null = null;
+
+/**
+ * Get the calendar day of a date in Fortaleza timezone as a sortable key
+ * @param date - Date to convert
+ * @returns Day key in YYYY-MM-DD format (en-CA locale yields ISO-style dates)
+ */
+export function getFortalezaDayKey(date: Date): string {
+  if (!dayKeyFormatter) {
+    dayKeyFormatter = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'America/Fortaleza',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    });
+  }
+  return dayKeyFormatter.format(date);
+}
+
 /**
  * Format a date to Brazilian format with time
  * @param date - Date to format

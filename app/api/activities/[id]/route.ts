@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { activities, children } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 export async function DELETE(
   request: Request,
@@ -27,17 +27,14 @@ export async function DELETE(
     // Delete activity
     await db.delete(activities).where(eq(activities.id, activityId));
 
-    // Update child's total points using Drizzle ORM (safe from SQL injection)
-    const [currentChild] = await db.select().from(children).where(eq(children.id, childId));
-    
-    if (currentChild) {
-      await db.update(children)
-        .set({
-          totalPoints: currentChild.totalPoints - pointsChange,
-          updatedAt: new Date(),
-        })
-        .where(eq(children.id, childId));
-    }
+    // Update child's total points atomically in a single statement:
+    // a read-then-write would lose points if two requests arrived at once
+    await db.update(children)
+      .set({
+        totalPoints: sql`${children.totalPoints} - ${pointsChange}`,
+        updatedAt: new Date(),
+      })
+      .where(eq(children.id, childId));
 
     return NextResponse.json({ success: true });
   } catch (error) {
