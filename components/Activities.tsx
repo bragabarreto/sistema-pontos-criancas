@@ -1,6 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getFortalezaDayKey } from '@/lib/timezone';
+import { BatchEntryModal } from './BatchEntryModal';
+
+const todayFortaleza = () => getFortalezaDayKey(new Date());
 
 interface ActivitiesProps {
   childId: number | null;
@@ -31,6 +35,11 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
 
+  // Quick-entry quantity per activity (defaults to 1) and batch modal
+  const [quickQty, setQuickQty] = useState<Record<number, number>>({});
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [registering, setRegistering] = useState(false);
+
   useEffect(() => {
     if (childId) {
       loadCustomActivities();
@@ -39,7 +48,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
       loadExpenses();
     }
     // Set current date as default
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayFortaleza();
     setSelectedDate(today);
     setExpenseDate(today);
   }, [childId]);
@@ -147,7 +156,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
         setShowExpenseModal(false);
         setExpenseDescription('');
         setExpenseAmount('');
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayFortaleza();
         setExpenseDate(today);
         loadExpenses();
         onUpdate(); // Trigger Dashboard refresh
@@ -208,29 +217,45 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     }
   };
 
-  const registerActivity = async (activity: any, category: string) => {
-    if (!childId) return;
+  const registerActivity = async (activity: any, category: string, quantity = 1) => {
+    if (!childId || registering) return;
 
+    setRegistering(true);
     try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          childId,
-          name: activity.name,
-          points: activity.points,
-          category,
-          multiplier: multipliers[category] || 1,
-          date: selectedDate, // Use selected date
-        }),
-      });
+      const multiplier = multipliers[category] || 1;
+      // A single unit uses the original endpoint; several units go through
+      // the batch endpoint so they are saved in one request
+      const response = quantity > 1
+        ? await fetch('/api/activities/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              childId,
+              dates: [selectedDate],
+              items: [{ name: activity.name, points: activity.points, category, multiplier, quantity }],
+            }),
+          })
+        : await fetch('/api/activities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              childId,
+              name: activity.name,
+              points: activity.points,
+              category,
+              multiplier,
+              date: selectedDate, // Use selected date
+            }),
+          });
 
       const data = await response.json();
 
       if (response.ok) {
         onUpdate();
         loadRecentActivities(); // Reload activities to show the new one
-        alert(`Atividade "${activity.name}" registrada para ${formatDate(selectedDate)}!`);
+        setQuickQty(prev => ({ ...prev, [activity.id]: 1 }));
+        const qtyLabel = quantity > 1 ? ` ${quantity}x` : '';
+        alert(`Atividade "${activity.name}"${qtyLabel} registrada para ${formatDate(selectedDate)}!`);
       } else {
         const errorMessage = data.error || 'Erro ao registrar atividade';
         alert(`Erro: ${errorMessage}`);
@@ -238,6 +263,8 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     } catch (error) {
       console.error('Error registering activity:', error);
       alert('Erro ao registrar atividade. Verifique sua conexão e tente novamente.');
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -464,8 +491,14 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
           </div>
         </div>
         <p className="text-sm text-gray-600 mt-2">
-          ℹ️ Clique nas atividades abaixo para registrá-las na data selecionada. Você pode alterar a data para registrar atividades de dias passados.
+          ℹ️ Clique nas atividades abaixo para registrá-las na data selecionada. Ajuste a quantidade (×) ao lado do botão + para lançar várias de uma vez.
         </p>
+        <button
+          onClick={() => setShowBatchModal(true)}
+          className="mt-3 w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+        >
+          📆 Lançamento em lote (vários dias)
+        </button>
       </div>
       
       <div className="space-y-6">
@@ -551,14 +584,35 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
                             -
                           </button>
                           
-                          {/* Add Entry Button */}
-                          <button
-                            onClick={() => registerActivity(activity, category)}
-                            className="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600"
-                            title="Atribuir atividade (adicionar pontos)"
-                          >
-                            +
-                          </button>
+                          {/* Quantity + Add Entry Button */}
+                          <div className="flex items-center border border-green-500 rounded overflow-hidden">
+                            <span className="text-xs text-gray-500 pl-1">×</span>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              max={99}
+                              value={quickQty[activity.id] ?? 1}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                setQuickQty(prev => ({
+                                  ...prev,
+                                  [activity.id]: isNaN(value) ? 1 : Math.max(1, Math.min(99, value)),
+                                }));
+                              }}
+                              className="w-10 text-center text-sm py-1 outline-none"
+                              title="Quantidade"
+                              aria-label="Quantidade"
+                            />
+                            <button
+                              onClick={() => registerActivity(activity, category, quickQty[activity.id] ?? 1)}
+                              disabled={registering}
+                              className="bg-green-500 text-white px-2 py-1 text-sm hover:bg-green-600 disabled:opacity-50"
+                              title="Atribuir atividade (adicionar pontos)"
+                            >
+                              +
+                            </button>
+                          </div>
                           
                           {/* Edit Button */}
                           <button
@@ -690,6 +744,21 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
           </div>
         )}
       </div>
+
+      {/* Batch Entry Modal */}
+      {showBatchModal && (
+        <BatchEntryModal
+          childId={childId}
+          customActivities={customActivities}
+          multipliers={multipliers}
+          categoryConfig={categoryConfig}
+          onClose={() => setShowBatchModal(false)}
+          onSaved={() => {
+            loadRecentActivities();
+            onUpdate();
+          }}
+        />
+      )}
 
       {/* Edit Activity Modal */}
       {editModalOpen && (
@@ -841,7 +910,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
                   setShowExpenseModal(false);
                   setExpenseDescription('');
                   setExpenseAmount('');
-                  const today = new Date().toISOString().split('T')[0];
+                  const today = todayFortaleza();
                   setExpenseDate(today);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400"
