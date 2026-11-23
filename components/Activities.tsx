@@ -1,6 +1,11 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { getFortalezaDayKey } from '@/lib/timezone';
+import { BatchEntryModal } from './BatchEntryModal';
+import { ManageActivities, CATEGORY_CONFIG } from './ManageActivities';
+
+const todayFortaleza = () => getFortalezaDayKey(new Date());
 
 interface ActivitiesProps {
   childId: number | null;
@@ -15,14 +20,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedActivityForDate, setSelectedActivityForDate] = useState<any>(null);
   const [recentActivities, setRecentActivities] = useState<any[]>([]);
-  const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingActivity, setEditingActivity] = useState<any>(null);
-  const [editName, setEditName] = useState('');
-  const [editPoints, setEditPoints] = useState(0);
-  const [newActivityModalOpen, setNewActivityModalOpen] = useState(false);
-  const [newActivityCategory, setNewActivityCategory] = useState('');
-  const [newActivityName, setNewActivityName] = useState('');
-  const [newActivityPoints, setNewActivityPoints] = useState(0);
+  const [managing, setManaging] = useState(false);
   
   // Expense management state
   const [expenses, setExpenses] = useState<any[]>([]);
@@ -30,6 +28,11 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
   const [expenseDescription, setExpenseDescription] = useState('');
   const [expenseAmount, setExpenseAmount] = useState('');
   const [expenseDate, setExpenseDate] = useState('');
+
+  // Quick-entry quantity per activity (defaults to 1) and batch modal
+  const [quickQty, setQuickQty] = useState<Record<number, number>>({});
+  const [showBatchModal, setShowBatchModal] = useState(false);
+  const [registering, setRegistering] = useState(false);
 
   useEffect(() => {
     if (childId) {
@@ -39,7 +42,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
       loadExpenses();
     }
     // Set current date as default
-    const today = new Date().toISOString().split('T')[0];
+    const today = todayFortaleza();
     setSelectedDate(today);
     setExpenseDate(today);
   }, [childId]);
@@ -147,7 +150,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
         setShowExpenseModal(false);
         setExpenseDescription('');
         setExpenseAmount('');
-        const today = new Date().toISOString().split('T')[0];
+        const today = todayFortaleza();
         setExpenseDate(today);
         loadExpenses();
         onUpdate(); // Trigger Dashboard refresh
@@ -208,29 +211,45 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     }
   };
 
-  const registerActivity = async (activity: any, category: string) => {
-    if (!childId) return;
+  const registerActivity = async (activity: any, category: string, quantity = 1) => {
+    if (!childId || registering) return;
 
+    setRegistering(true);
     try {
-      const response = await fetch('/api/activities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          childId,
-          name: activity.name,
-          points: activity.points,
-          category,
-          multiplier: multipliers[category] || 1,
-          date: selectedDate, // Use selected date
-        }),
-      });
+      const multiplier = multipliers[category] || 1;
+      // A single unit uses the original endpoint; several units go through
+      // the batch endpoint so they are saved in one request
+      const response = quantity > 1
+        ? await fetch('/api/activities/batch', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              childId,
+              dates: [selectedDate],
+              items: [{ name: activity.name, points: activity.points, category, multiplier, quantity }],
+            }),
+          })
+        : await fetch('/api/activities', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              childId,
+              name: activity.name,
+              points: activity.points,
+              category,
+              multiplier,
+              date: selectedDate, // Use selected date
+            }),
+          });
 
       const data = await response.json();
 
       if (response.ok) {
         onUpdate();
         loadRecentActivities(); // Reload activities to show the new one
-        alert(`Atividade "${activity.name}" registrada para ${formatDate(selectedDate)}!`);
+        setQuickQty(prev => ({ ...prev, [activity.id]: 1 }));
+        const qtyLabel = quantity > 1 ? ` ${quantity}x` : '';
+        alert(`Atividade "${activity.name}"${qtyLabel} registrada para ${formatDate(selectedDate)}!`);
       } else {
         const errorMessage = data.error || 'Erro ao registrar atividade';
         alert(`Erro: ${errorMessage}`);
@@ -238,6 +257,8 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     } catch (error) {
       console.error('Error registering activity:', error);
       alert('Erro ao registrar atividade. Verifique sua conexão e tente novamente.');
+    } finally {
+      setRegistering(false);
     }
   };
 
@@ -267,161 +288,21 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     return `${weekdays[date.getDay()]}, ${day}/${month}/${year}`;
   };
 
-  // Edit custom activity
-  const openEditModal = (activity: any) => {
-    setEditingActivity(activity);
-    setEditName(activity.name);
-    setEditPoints(activity.points);
-    setEditModalOpen(true);
-  };
-
-  const closeEditModal = () => {
-    setEditModalOpen(false);
-    setEditingActivity(null);
-    setEditName('');
-    setEditPoints(0);
-  };
-
-  const saveEditedActivity = async () => {
-    if (!editingActivity || !editName || editPoints <= 0) {
-      alert('Por favor, preencha todos os campos corretamente');
-      return;
-    }
-
-    try {
-      const response = await fetch(`/api/custom-activities/${editingActivity.id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: editName,
-          points: editPoints,
-        }),
-      });
-
-      if (response.ok) {
-        loadCustomActivities();
-        closeEditModal();
-        alert('Atividade atualizada com sucesso para ambas as crianças!');
-      } else {
-        const data = await response.json();
-        alert(`Erro: ${data.error || 'Erro ao atualizar atividade'}`);
-      }
-    } catch (error) {
-      console.error('Error updating activity:', error);
-      alert('Erro ao atualizar atividade');
-    }
-  };
-
-  // Delete custom activity
-  const deleteCustomActivity = async (activityId: number) => {
-    if (!confirm('Tem certeza que deseja excluir esta atividade personalizada? Ela será removida para ambas as crianças (Luiza e Miguel).')) return;
-
-    try {
-      const response = await fetch(`/api/custom-activities/${activityId}`, {
-        method: 'DELETE',
-      });
-
-      if (response.ok) {
-        loadCustomActivities();
-        onUpdate();
-        alert('Atividade excluída com sucesso para ambas as crianças!');
-      } else {
-        const data = await response.json();
-        alert(`Erro: ${data.error || 'Erro ao excluir atividade'}`);
-      }
-    } catch (error) {
-      console.error('Error deleting custom activity:', error);
-      alert('Erro ao excluir atividade');
-    }
-  };
-
-  // Move custom activity
-  const moveActivity = async (activity: any, direction: 'up' | 'down') => {
-    const categoryActivities = customActivities.filter(a => a.category === activity.category);
-    const currentIndex = categoryActivities.findIndex(a => a.id === activity.id);
-    
-    if (direction === 'up' && currentIndex === 0) return;
-    if (direction === 'down' && currentIndex === categoryActivities.length - 1) return;
-
-    const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
-    const otherActivity = categoryActivities[newIndex];
-
-    try {
-      // Swap order indices - now synchronized for both children
-      await fetch('/api/custom-activities/reorder', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          childId,
-          category: activity.category,
-          activityId: activity.activityId,
-          direction,
-        }),
-      });
-
-      loadCustomActivities();
-      alert(`Atividade movida para ${direction === 'up' ? 'cima' : 'baixo'} (sincronizado para ambas as crianças)!`);
-    } catch (error) {
-      console.error('Error reordering activities:', error);
-      alert('Erro ao reordenar atividades');
-    }
-  };
-
-  // Open new activity modal
-  const openNewActivityModal = (category: string) => {
-    setNewActivityCategory(category);
-    setNewActivityName('');
-    setNewActivityPoints(0);
-    setNewActivityModalOpen(true);
-  };
-
-  // Close new activity modal
-  const closeNewActivityModal = () => {
-    setNewActivityModalOpen(false);
-    setNewActivityCategory('');
-    setNewActivityName('');
-    setNewActivityPoints(0);
-  };
-
-  // Save new activity (creates for both children)
-  const saveNewActivity = async () => {
-    if (!newActivityName || newActivityPoints <= 0) {
-      alert('Por favor, preencha todos os campos corretamente');
-      return;
-    }
-
-    try {
-      // Generate a unique activity ID
-      const uniqueId = `custom_${Date.now()}`;
-      
-      const response = await fetch('/api/custom-activities', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          childId,
-          activityId: uniqueId,
-          name: newActivityName,
-          points: newActivityPoints,
-          category: newActivityCategory,
-        }),
-      });
-
-      if (response.ok) {
-        loadCustomActivities();
-        closeNewActivityModal();
-        alert('Atividade criada com sucesso para ambas as crianças!');
-      } else {
-        const data = await response.json();
-        alert(`Erro: ${data.error || 'Erro ao criar atividade'}`);
-      }
-    } catch (error) {
-      console.error('Error creating activity:', error);
-      alert('Erro ao criar atividade');
-    }
-  };
-
   if (!childId) {
     return <div className="text-center text-gray-500">Selecione uma criança</div>;
+  }
+
+  if (managing) {
+    return (
+      <ManageActivities
+        childId={childId}
+        onBack={() => {
+          setManaging(false);
+          loadCustomActivities();
+          loadMultipliers();
+        }}
+      />
+    );
   }
 
   if (loading) {
@@ -435,16 +316,19 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
     graves: customActivities.filter(a => a.category === 'graves'),
   };
 
-  const categoryConfig = {
-    positivos: { title: '✅ Atividades Positivas', color: 'bg-green-100 border-green-300' },
-    especiais: { title: '⭐ Atividades Especiais', color: 'bg-yellow-100 border-yellow-300' },
-    negativos: { title: '❌ Atividades Negativas', color: 'bg-orange-100 border-orange-300' },
-    graves: { title: '🚫 Atividades Graves', color: 'bg-red-100 border-red-300' },
-  };
+  const categoryConfig = CATEGORY_CONFIG;
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-4">🎯 Atividades</h2>
+      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+        <h2 className="text-2xl font-bold">🎯 Atividades</h2>
+        <button
+          onClick={() => setManaging(true)}
+          className="bg-gray-100 border border-gray-300 text-gray-800 px-3 py-2 rounded-lg text-sm font-semibold hover:bg-gray-200"
+        >
+          🛠️ Gerenciar atividades
+        </button>
+      </div>
       
       {/* Date Selection Info */}
       <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -464,77 +348,37 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
           </div>
         </div>
         <p className="text-sm text-gray-600 mt-2">
-          ℹ️ Clique nas atividades abaixo para registrá-las na data selecionada. Você pode alterar a data para registrar atividades de dias passados.
+          ℹ️ Clique nas atividades abaixo para registrá-las na data selecionada. Ajuste a quantidade (×) ao lado do botão + para lançar várias de uma vez.
         </p>
+        <button
+          onClick={() => setShowBatchModal(true)}
+          className="mt-3 w-full sm:w-auto bg-blue-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-colors"
+        >
+          📆 Lançamento em lote (vários dias)
+        </button>
       </div>
       
       <div className="space-y-6">
         {Object.entries(categoryConfig).map(([category, config]) => (
           <div key={category} className={`border-2 rounded-lg p-4 ${config.color}`}>
-            <div className="flex justify-between items-center mb-3">
-              <h3 className="text-lg font-bold">{config.title}</h3>
-              <button
-                onClick={() => openNewActivityModal(category)}
-                className="bg-blue-600 text-white px-3 py-1 rounded-md text-sm font-semibold hover:bg-blue-700 transition-colors"
-                title="Adicionar nova atividade"
-              >
-                + Nova Atividade
-              </button>
-            </div>
-            <p className="text-sm text-gray-600 mb-3">
-              Multiplicador: {multipliers[category] || 1}x
-            </p>
+            <h3 className="text-lg font-bold mb-3">{config.title}</h3>
             <div className="space-y-2">
               {categorizedActivities[category as keyof typeof categorizedActivities].length === 0 ? (
                 <p className="text-gray-500 text-sm">Nenhuma atividade cadastrada</p>
               ) : (
-                categorizedActivities[category as keyof typeof categorizedActivities].map((activity, index) => {
-                  const categoryActivities = categorizedActivities[category as keyof typeof categorizedActivities];
-                  const isFirst = index === 0;
-                  const isLast = index === categoryActivities.length - 1;
-                  
+                categorizedActivities[category as keyof typeof categorizedActivities].map((activity) => {
                   return (
                     <div key={activity.id} className="bg-white rounded-md p-3 border border-gray-300 hover:shadow-md transition-all">
                       <div className="flex justify-between items-center gap-3">
-                        <div className="flex-1">
+                        <div className="flex-1 min-w-0">
                           <p className="font-semibold text-gray-800">{activity.name}</p>
                           <p className="text-sm text-gray-600">
-                            {activity.points} pontos base × {multipliers[category] || 1} = {' '}
-                            <span className="font-bold">
-                              {activity.points * (multipliers[category] || 1)} pontos
-                            </span>
+                            {category === 'negativos' || category === 'graves' ? '-' : '+'}
+                            {activity.points * (multipliers[category] || 1)} pts
                           </p>
                         </div>
-                        <div className="flex gap-1 items-center flex-wrap">
-                          {/* Move Up Button */}
-                          <button
-                            onClick={() => moveActivity(activity, 'up')}
-                            disabled={isFirst}
-                            className={`px-2 py-1 rounded text-sm ${
-                              isFirst 
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                                : 'bg-purple-500 text-white hover:bg-purple-600'
-                            }`}
-                            title="Mover para cima"
-                          >
-                            ↑
-                          </button>
-                          
-                          {/* Move Down Button */}
-                          <button
-                            onClick={() => moveActivity(activity, 'down')}
-                            disabled={isLast}
-                            className={`px-2 py-1 rounded text-sm ${
-                              isLast 
-                                ? 'bg-gray-200 text-gray-400 cursor-not-allowed' 
-                                : 'bg-purple-500 text-white hover:bg-purple-600'
-                            }`}
-                            title="Mover para baixo"
-                          >
-                            ↓
-                          </button>
-                          
-                          {/* Remove Entry Button (NEW) */}
+                        <div className="flex gap-1 items-center shrink-0">
+                          {/* Remove last entry */}
                           <button
                             onClick={() => {
                               // Remove the most recent entry of this activity
@@ -545,38 +389,42 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
                                 alert('Nenhum registro desta atividade encontrado para remover');
                               }
                             }}
-                            className="bg-orange-500 text-white px-2 py-1 rounded text-sm hover:bg-orange-600"
+                            className="bg-orange-500 text-white w-9 h-9 rounded font-bold hover:bg-orange-600"
                             title="Retirar atividade (remover última entrada)"
                           >
                             -
                           </button>
                           
-                          {/* Add Entry Button */}
-                          <button
-                            onClick={() => registerActivity(activity, category)}
-                            className="bg-green-500 text-white px-2 py-1 rounded text-sm hover:bg-green-600"
-                            title="Atribuir atividade (adicionar pontos)"
-                          >
-                            +
-                          </button>
+                          {/* Quantity + Add Entry Button */}
+                          <div className="flex items-center border border-green-500 rounded overflow-hidden">
+                            <span className="text-xs text-gray-500 pl-1">×</span>
+                            <input
+                              type="number"
+                              inputMode="numeric"
+                              min={1}
+                              max={99}
+                              value={quickQty[activity.id] ?? 1}
+                              onChange={(e) => {
+                                const value = parseInt(e.target.value);
+                                setQuickQty(prev => ({
+                                  ...prev,
+                                  [activity.id]: isNaN(value) ? 1 : Math.max(1, Math.min(99, value)),
+                                }));
+                              }}
+                              className="w-10 h-9 text-center text-sm outline-none"
+                              title="Quantidade"
+                              aria-label="Quantidade"
+                            />
+                            <button
+                              onClick={() => registerActivity(activity, category, quickQty[activity.id] ?? 1)}
+                              disabled={registering}
+                              className="bg-green-500 text-white w-9 h-9 font-bold hover:bg-green-600 disabled:opacity-50"
+                              title="Atribuir atividade (adicionar pontos)"
+                            >
+                              +
+                            </button>
+                          </div>
                           
-                          {/* Edit Button */}
-                          <button
-                            onClick={() => openEditModal(activity)}
-                            className="bg-yellow-500 text-white px-2 py-1 rounded text-sm hover:bg-yellow-600"
-                            title="Editar atividade"
-                          >
-                            ✏️
-                          </button>
-                          
-                          {/* Delete Button */}
-                          <button
-                            onClick={() => deleteCustomActivity(activity.id)}
-                            className="bg-red-600 text-white px-2 py-1 rounded text-sm hover:bg-red-700"
-                            title="Excluir atividade"
-                          >
-                            🗑️
-                          </button>
                         </div>
                       </div>
                     </div>
@@ -691,105 +539,19 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
         )}
       </div>
 
-      {/* Edit Activity Modal */}
-      {editModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">✏️ Editar Atividade</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Nome da Atividade:</label>
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Nome da atividade"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Pontos Base:</label>
-              <input
-                type="number"
-                value={editPoints}
-                onChange={(e) => setEditPoints(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Pontos"
-              />
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              ℹ️ Esta alteração será aplicada para ambas as crianças (Luiza e Miguel).
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={saveEditedActivity}
-                className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700"
-              >
-                Salvar
-              </button>
-              <button
-                onClick={closeEditModal}
-                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* New Activity Modal */}
-      {newActivityModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-            <h3 className="text-xl font-bold mb-4">➕ Nova Atividade</h3>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Categoria:</label>
-              <input
-                type="text"
-                value={categoryConfig[newActivityCategory as keyof typeof categoryConfig]?.title || newActivityCategory}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-100"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Nome da Atividade:</label>
-              <input
-                type="text"
-                value={newActivityName}
-                onChange={(e) => setNewActivityName(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Ex: Ler um livro"
-              />
-            </div>
-            <div className="mb-4">
-              <label className="block text-sm font-semibold mb-2">Pontos Base:</label>
-              <input
-                type="number"
-                value={newActivityPoints}
-                onChange={(e) => setNewActivityPoints(parseInt(e.target.value) || 0)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                placeholder="Ex: 1, 2, 5"
-              />
-            </div>
-            <p className="text-sm text-gray-600 mb-4">
-              ℹ️ Esta atividade será criada para ambas as crianças (Luiza e Miguel).
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={saveNewActivity}
-                className="flex-1 bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700"
-              >
-                Criar Atividade
-              </button>
-              <button
-                onClick={closeNewActivityModal}
-                className="flex-1 bg-gray-500 text-white px-4 py-2 rounded-md hover:bg-gray-600"
-              >
-                Cancelar
-              </button>
-            </div>
-          </div>
-        </div>
+      {/* Batch Entry Modal */}
+      {showBatchModal && (
+        <BatchEntryModal
+          childId={childId}
+          customActivities={customActivities}
+          multipliers={multipliers}
+          categoryConfig={categoryConfig}
+          onClose={() => setShowBatchModal(false)}
+          onSaved={() => {
+            loadRecentActivities();
+            onUpdate();
+          }}
+        />
       )}
 
       {/* Expense Modal */}
@@ -841,7 +603,7 @@ export function Activities({ childId, onUpdate }: ActivitiesProps) {
                   setShowExpenseModal(false);
                   setExpenseDescription('');
                   setExpenseAmount('');
-                  const today = new Date().toISOString().split('T')[0];
+                  const today = todayFortaleza();
                   setExpenseDate(today);
                 }}
                 className="flex-1 bg-gray-300 text-gray-700 px-4 py-2 rounded-lg font-semibold hover:bg-gray-400"

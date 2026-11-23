@@ -8,12 +8,6 @@ interface SettingsProps {
 }
 
 export function Settings({ childId, onUpdate }: SettingsProps) {
-  const [multipliers, setMultipliers] = useState({
-    positivos: 1,
-    especiais: 50,
-    negativos: 1,
-    graves: 100,
-  });
   const [loading, setLoading] = useState(true);
   
   // Parent user state
@@ -27,26 +21,12 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
   const [childStartDate, setChildStartDate] = useState('');
 
   useEffect(() => {
-    loadSettings();
+    setLoading(false);
     loadParentInfo();
     if (childId) {
       loadChildInfo();
     }
   }, [childId]);
-
-  const loadSettings = async () => {
-    try {
-      const response = await fetch('/api/settings?key=multipliers');
-      const data = await response.json();
-      if (data?.value) {
-        setMultipliers(data.value);
-      }
-    } catch (error) {
-      console.error('Error loading settings:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const loadParentInfo = async () => {
     try {
@@ -78,22 +58,6 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     }
   };
 
-  const saveMultipliers = async () => {
-    try {
-      await fetch('/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          key: 'multipliers',
-          value: multipliers,
-        }),
-      });
-      alert('Multiplicadores salvos com sucesso!');
-    } catch (error) {
-      console.error('Error saving multipliers:', error);
-      alert('Erro ao salvar multiplicadores');
-    }
-  };
 
   const exportData = async () => {
     try {
@@ -354,52 +318,8 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
         </p>
       </div>
 
-      <div className="mb-8">
-        <h3 className="text-xl font-bold mb-4">Multiplicadores de Pontos</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-semibold mb-2">Atividades Positivas</label>
-            <input
-              type="number"
-              value={multipliers.positivos}
-              onChange={(e) => setMultipliers({ ...multipliers, positivos: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-2">Atividades Especiais</label>
-            <input
-              type="number"
-              value={multipliers.especiais}
-              onChange={(e) => setMultipliers({ ...multipliers, especiais: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-2">Atividades Negativas</label>
-            <input
-              type="number"
-              value={multipliers.negativos}
-              onChange={(e) => setMultipliers({ ...multipliers, negativos: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-semibold mb-2">Atividades Graves</label>
-            <input
-              type="number"
-              value={multipliers.graves}
-              onChange={(e) => setMultipliers({ ...multipliers, graves: parseInt(e.target.value) || 1 })}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
-          </div>
-        </div>
-        <button
-          onClick={saveMultipliers}
-          className="mt-4 bg-blue-600 text-white px-6 py-2 rounded-md hover:bg-blue-700"
-        >
-          Salvar Multiplicadores
-        </button>
+      <div className="mb-8 text-sm text-gray-600 bg-gray-50 border border-gray-200 rounded-lg p-4">
+        ✖️ Os multiplicadores de pontos agora ficam em <strong>Atividades → 🛠️ Gerenciar atividades</strong>, junto com a edição das atividades.
       </div>
     </div>
   );

@@ -23,14 +23,23 @@ export function getFortalezaNow(): Date {
 export function dateStringToFortalezaTimestamp(dateString: string): Date {
   // Parse the date string
   const [year, month, day] = dateString.split('-').map(Number);
-  
-  // Get current time in Fortaleza
-  const now = getFortalezaNow();
-  
-  // Create date with specified date and current time in Fortaleza timezone
-  const date = new Date(year, month - 1, day, now.getHours(), now.getMinutes(), now.getSeconds());
-  
-  return date;
+
+  // Fortaleza is a fixed UTC-3 (no daylight saving). Take the current
+  // wall-clock time in Fortaleza and place it on the requested day, so the
+  // result is independent of the server's own timezone (Vercel runs in UTC,
+  // where the old local-time constructor could shift late-evening entries
+  // to the previous day).
+  const FORTALEZA_OFFSET_HOURS = 3;
+  const fortalezaNow = new Date(getFortalezaNow().getTime() - FORTALEZA_OFFSET_HOURS * 3600_000);
+
+  return new Date(Date.UTC(
+    year,
+    month - 1,
+    day,
+    fortalezaNow.getUTCHours() + FORTALEZA_OFFSET_HOURS,
+    fortalezaNow.getUTCMinutes(),
+    fortalezaNow.getUTCSeconds(),
+  ));
 }
 
 // Cached formatter: creating Intl.DateTimeFormat is expensive, so reuse a
