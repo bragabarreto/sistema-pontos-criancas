@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AccessSettings } from './AccessSettings';
 
 interface SettingsProps {
   childId: number | null;
@@ -215,6 +216,8 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6">⚙️ Configurações</h2>
+
+      <AccessSettings />
 
       {/* Parent User Registration Section */}
       <div className="mb-8 bg-purple-50 border border-purple-200 rounded-lg p-4">

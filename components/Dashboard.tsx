@@ -8,6 +8,8 @@ import { fetchJsonWithRetry } from '@/lib/fetch-retry';
 interface DashboardProps {
   childId: number | null;
   childData: any;
+  /** Kids' view: hides every button that changes data */
+  readOnly?: boolean;
 }
 
 // Limit chart bars: rendering hundreds of DOM bars (one per day of history)
@@ -47,7 +49,7 @@ function FortalezaDateTime() {
   );
 }
 
-export function Dashboard({ childId, childData }: DashboardProps) {
+export function Dashboard({ childId, childData, readOnly = false }: DashboardProps) {
   const [activities, setActivities] = useState<any[]>([]);
   const [expenses, setExpenses] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -297,13 +299,13 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                     </p>
                     <p className="text-xs text-gray-500">{activity.category}</p>
                   </div>
-                  <button
+                  {!readOnly && <button
                     onClick={() => deleteActivityEntry(activity.id)}
                     className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 font-semibold"
                     title="Excluir entrada"
                   >
                     🗑️
-                  </button>
+                  </button>}
                 </div>
               </div>
             ))}
@@ -315,12 +317,12 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       <div className="mt-6 bg-gray-50 p-6 rounded-lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold">💰 Gastos</h3>
-          <button
+          {!readOnly && <button
             onClick={() => setShowExpenseModal(true)}
             className="bg-orange-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-orange-700 transition-colors"
           >
             + Adicionar Gasto
-          </button>
+          </button>}
         </div>
         {loading ? (
           <p className="text-gray-500">Carregando...</p>
@@ -345,13 +347,13 @@ export function Dashboard({ childId, childData }: DashboardProps) {
                       -{expense.amount}
                     </p>
                   </div>
-                  <button
+                  {!readOnly && <button
                     onClick={() => deleteExpense(expense.id)}
                     className="bg-red-600 text-white px-2 py-1 rounded text-xs hover:bg-red-700 font-semibold"
                     title="Excluir gasto"
                   >
                     🗑️
-                  </button>
+                  </button>}
                 </div>
               </div>
             ))}
@@ -360,7 +362,7 @@ export function Dashboard({ childId, childData }: DashboardProps) {
       </div>
 
       {/* Expense Modal */}
-      {showExpenseModal && (
+      {showExpenseModal && !readOnly && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <h3 className="text-xl font-bold mb-4">Adicionar Gasto</h3>
