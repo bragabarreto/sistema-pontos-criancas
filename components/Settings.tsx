@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { AccessSettings } from './AccessSettings';
 
 interface SettingsProps {
   childId: number | null;
@@ -216,51 +217,7 @@ export function Settings({ childId, onUpdate }: SettingsProps) {
     <div>
       <h2 className="text-2xl font-bold mb-6">⚙️ Configurações</h2>
 
-      <div className="mb-8 bg-green-50 border-2 border-green-300 rounded-lg p-4">
-        <h3 className="text-xl font-bold mb-2">👀 Link para as crianças</h3>
-        <p className="text-sm text-gray-600 mb-3">
-          Página só de leitura: mostra pontos, histórico e regras, sem permitir alterações.
-        </p>
-        <div className="flex gap-2 flex-wrap">
-          <input
-            readOnly
-            value={typeof window !== 'undefined' ? `${window.location.origin}/acompanhar` : '/acompanhar'}
-            className="flex-1 min-w-0 px-3 py-2 border border-gray-300 rounded-md bg-white text-sm"
-            onFocus={(e) => e.target.select()}
-          />
-          <button
-            onClick={async () => {
-              const url = `${window.location.origin}/acompanhar`;
-              try {
-                await navigator.clipboard.writeText(url);
-                alert('Link copiado!');
-              } catch {
-                prompt('Copie o link:', url);
-              }
-            }}
-            className="bg-green-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-green-700"
-          >
-            Copiar
-          </button>
-          <a
-            href="/acompanhar"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="bg-gray-200 text-gray-800 px-4 py-2 rounded-md font-semibold hover:bg-gray-300"
-          >
-            Abrir
-          </a>
-        </div>
-        <button
-          onClick={async () => {
-            await fetch('/api/login', { method: 'DELETE' });
-            window.location.href = '/login';
-          }}
-          className="mt-4 text-sm text-gray-600 underline"
-        >
-          Sair da área dos pais neste aparelho
-        </button>
-      </div>
+      <AccessSettings />
 
       {/* Parent User Registration Section */}
       <div className="mb-8 bg-purple-50 border border-purple-200 rounded-lg p-4">

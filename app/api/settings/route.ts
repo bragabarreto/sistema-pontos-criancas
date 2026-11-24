@@ -1,19 +1,25 @@
 import { NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 import { settings } from '@/lib/schema';
-import { eq } from 'drizzle-orm';
+import { eq, ne } from 'drizzle-orm';
+import { AUTH_SETTINGS_KEY } from '@/lib/auth';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const key = searchParams.get('key');
 
+    // Password data is never exposed through this endpoint
+    if (key === AUTH_SETTINGS_KEY) {
+      return NextResponse.json({ error: 'Not allowed' }, { status: 403 });
+    }
+
     if (key) {
       const setting = await db.select().from(settings).where(eq(settings.key, key));
       return NextResponse.json(setting.length > 0 ? setting[0] : null);
     }
 
-    const allSettings = await db.select().from(settings);
+    const allSettings = await db.select().from(settings).where(ne(settings.key, AUTH_SETTINGS_KEY));
     return NextResponse.json(allSettings);
   } catch (error) {
     console.error('Error fetching settings:', error);
@@ -32,6 +38,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const { key, value } = body;
+
+    if (!key || key === AUTH_SETTINGS_KEY) {
+      return NextResponse.json({ error: 'Invalid key' }, { status: 400 });
+    }
 
     // Try to update existing setting first
     const existingSetting = await db.select().from(settings).where(eq(settings.key, key));

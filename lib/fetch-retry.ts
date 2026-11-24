@@ -48,6 +48,11 @@ export async function fetchJsonWithRetry<T = any>(
 
       // 5xx errors are likely transient (DB cold start) — retry.
       // 4xx errors are permanent — fail immediately.
+      // Session expired or password changed elsewhere: back to login
+      if (response.status === 401 && typeof window !== 'undefined') {
+        window.location.href = `/login?next=${encodeURIComponent(window.location.pathname)}`;
+      }
+
       if (response.status >= 500) {
         lastError = new Error(`HTTP ${response.status} em ${url}`);
       } else {

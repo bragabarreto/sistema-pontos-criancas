@@ -1,49 +1,73 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { ADMIN_COOKIE, adminToken, getAdminPassword, safeEqual } from '@/lib/auth';
+import { SESSION_COOKIE, readSession } from '@/lib/auth';
 
-// Pages and endpoints anyone can open (the kids' read-only view)
-const PUBLIC_PAGES = ['/acompanhar', '/login'];
-const PUBLIC_API = ['/api/login', '/api/health'];
-// Read-only data the kids' page needs (GET only)
-const PUBLIC_READ_API = [
-  '/api/children',
-  '/api/activities',
-  '/api/expenses',
-  '/api/custom-activities',
-  '/api/settings',
-];
+const PUBLIC_PATHS = ['/login', '/api/auth/login', '/api/auth/profiles', '/api/health'];
+const CHANGE_PASSWORD_PATHS = ['/trocar-senha', '/api/auth/password', '/api/auth/me', '/api/auth/login'];
+// What a child may read; anything else (and every write) is parent-only
+const CHILD_READ_API = ['/api/children', '/api/activities', '/api/expenses', '/api/custom-activities', '/api/settings'];
+const CHILD_SCOPED_API = ['/api/activities', '/api/expenses', '/api/custom-activities'];
 
-const matches = (path: string, prefixes: string[]) =>
-  prefixes.some(p => path === p || path.startsWith(p + '/'));
+const matches = (path: string, list: string[]) => list.some(p => path === p || path.startsWith(p + '/'));
+
+function deny(request: NextRequest, isApi: boolean, status: number, redirectTo: string) {
+  if (isApi) {
+    return NextResponse.json({ error: status === 401 ? 'Faça login' : 'Acesso não permitido' }, { status });
+  }
+  const url = new URL(redirectTo, request.url);
+  if (redirectTo === '/login') url.searchParams.set('next', request.nextUrl.pathname + request.nextUrl.search);
+  return NextResponse.redirect(url);
+}
 
 export async function middleware(request: NextRequest) {
-  const password = getAdminPassword();
-  if (!password) return NextResponse.next(); // protection disabled
-
-  const { pathname } = request.nextUrl;
+  const { pathname, searchParams } = request.nextUrl;
   const isApi = pathname.startsWith('/api/');
 
-  if (matches(pathname, PUBLIC_PAGES) || matches(pathname, PUBLIC_API)) {
-    return NextResponse.next();
-  }
-  if (isApi && request.method === 'GET' && matches(pathname, PUBLIC_READ_API)) {
-    return NextResponse.next();
+  if (matches(pathname, PUBLIC_PATHS)) return NextResponse.next();
+
+  let session;
+  try {
+    session = await readSession(request.cookies.get(SESSION_COOKIE)?.value);
+  } catch (error) {
+    // Database unavailable (e.g. cold start): fail closed
+    console.error('Auth check failed:', error);
+    return isApi
+      ? NextResponse.json({ error: 'Serviço indisponível, tente novamente' }, { status: 503 })
+      : new NextResponse('Serviço indisponível, recarregue a página em instantes.', { status: 503 });
   }
 
-  const cookie = request.cookies.get(ADMIN_COOKIE)?.value ?? '';
-  if (cookie && safeEqual(cookie, await adminToken(password))) {
-    return NextResponse.next();
+  if (!session) return deny(request, isApi, 401, '/login');
+
+  if (session.mustChange && !matches(pathname, CHANGE_PASSWORD_PATHS)) {
+    return deny(request, isApi, 403, '/trocar-senha');
   }
 
-  if (isApi) {
-    return NextResponse.json({ error: 'Acesso restrito ao responsável' }, { status: 401 });
+  if (session.role === 'parent') return NextResponse.next();
+
+  // Child: only the read-only page and its reads
+  if (!isApi) {
+    return pathname === '/acompanhar' || pathname === '/trocar-senha'
+      ? NextResponse.next()
+      : NextResponse.redirect(new URL('/acompanhar', request.url));
   }
-  const loginUrl = new URL('/login', request.url);
-  loginUrl.searchParams.set('next', pathname + request.nextUrl.search);
-  return NextResponse.redirect(loginUrl);
+  if (matches(pathname, CHANGE_PASSWORD_PATHS)) return NextResponse.next();
+  if (request.method !== 'GET' || !matches(pathname, CHILD_READ_API)) {
+    return deny(request, true, 403, '/acompanhar');
+  }
+  if (pathname === '/api/settings' && searchParams.get('key') !== 'multipliers') {
+    return deny(request, true, 403, '/acompanhar');
+  }
+  // A child only sees their own records
+  if (matches(pathname, CHILD_SCOPED_API) && searchParams.get('childId') !== String(session.childId)) {
+    return deny(request, true, 403, '/acompanhar');
+  }
+  if (pathname.startsWith('/api/children/') && pathname !== `/api/children/${session.childId}`) {
+    return deny(request, true, 403, '/acompanhar');
+  }
+  return NextResponse.next();
 }
 
 export const config = {
+  runtime: 'nodejs',
   // Everything except Next.js internals and static files
   matcher: ['/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)'],
 };
